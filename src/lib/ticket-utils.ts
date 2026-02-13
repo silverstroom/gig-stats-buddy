@@ -105,17 +105,68 @@ export function getEditionDays(edition: FestivalEdition): string[] {
 }
 
 /**
- * Get all calendar days an event covers (based on startDatetime/endDatetime).
+ * Get the calendar days an event covers by parsing the event name.
+ * Event names contain explicit day info like "11 Agosto", "11 - 13 Agosto", etc.
+ * For "Full"/"Early Bird" events, checks ticket type names or falls back to datetime range.
  * Returns ISO date strings (YYYY-MM-DD).
  */
 function getEventDays(event: DiceEventRaw): string[] {
+  const name = event.name;
+  const start = new Date(event.startDatetime);
+  const year = start.getFullYear();
+  const month = start.getMonth(); // 0-indexed
+
+  // Try to extract explicit day numbers from event name before a month keyword
+  // Handles: "11 Agosto", "11 - 12 Agosto", "11 - 12 - 13 Agosto"
+  const monthPattern = /(?:Agosto|Aprile|Dicembre|Gennaio|Febbraio|Marzo|Giugno|Luglio|Settembre|Ottobre|Novembre)/i;
+  const monthMatch = name.match(monthPattern);
+  
+  if (monthMatch) {
+    const beforeMonth = name.slice(0, monthMatch.index);
+    const dayNumbers = beforeMonth.match(/\d{1,2}/g);
+    if (dayNumbers && dayNumbers.length > 0) {
+      return dayNumbers
+        .map(d => {
+          const date = new Date(year, month, parseInt(d));
+          return date.toISOString().split('T')[0];
+        })
+        .sort();
+    }
+  }
+
+  // For "Full" / "Early Bird" / "Abbonamento" events without explicit days in name,
+  // check ticket type names for day info
+  if (/abbonamento|full|early\s*bird/i.test(name)) {
+    for (const tt of event.ticketTypes) {
+      const ttMonthMatch = tt.name.match(monthPattern);
+      if (ttMonthMatch) {
+        const beforeMonth = tt.name.slice(0, ttMonthMatch.index);
+        const dayNumbers = beforeMonth.match(/\d{1,2}/g);
+        if (dayNumbers && dayNumbers.length > 0) {
+          return dayNumbers
+            .map(d => {
+              const date = new Date(year, month, parseInt(d));
+              return date.toISOString().split('T')[0];
+            })
+            .sort();
+        }
+      }
+    }
+  }
+
+  // Fallback: use datetime range for events without parseable day info
+  return getEventDaysByDatetime(event);
+}
+
+/**
+ * Fallback: get event days from the startDatetime/endDatetime range.
+ */
+function getEventDaysByDatetime(event: DiceEventRaw): string[] {
   const start = new Date(event.startDatetime);
   const end = new Date(event.endDatetime);
   const days: string[] = [];
 
-  // Normalize to calendar dates
   const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  // If end is past midnight, subtract one day (event ended that night)
   let endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
   if (end.getHours() < 12 && endDate.getTime() > startDate.getTime()) {
     endDate = new Date(endDate.getTime() - 86400000);
@@ -127,7 +178,6 @@ function getEventDays(event: DiceEventRaw): string[] {
     current.setDate(current.getDate() + 1);
   }
 
-  // Ensure at least one day
   if (days.length === 0) {
     days.push(startDate.toISOString().split('T')[0]);
   }
