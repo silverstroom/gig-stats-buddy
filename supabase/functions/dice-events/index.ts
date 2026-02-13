@@ -34,20 +34,15 @@ Deno.serve(async (req) => {
                 state
                 startDatetime
                 endDatetime
+                totalTicketAllocationQty
                 ticketTypes {
-                  edges {
-                    node {
-                      id
-                      name
-                      soldCount
-                      price {
-                        total {
-                          amount
-                          currency
-                        }
-                      }
-                    }
-                  }
+                  id
+                  name
+                  price
+                  totalTicketAllocationQty
+                }
+                tickets(first: 0) {
+                  totalCount
                 }
               }
             }
@@ -90,14 +85,13 @@ Deno.serve(async (req) => {
             id
             name
             ticketTypes {
-              edges {
-                node {
-                  id
-                  name
-                  soldCount
-                  allocation
-                }
-              }
+              id
+              name
+              price
+              totalTicketAllocationQty
+            }
+            tickets(first: 0) {
+              totalCount
             }
           }
         }
