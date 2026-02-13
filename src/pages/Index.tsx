@@ -21,6 +21,8 @@ const Index = () => {
 
   useEffect(() => {
     fetchEvents();
+    const interval = setInterval(fetchEvents, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [fetchEvents]);
 
   const editions = useMemo(() => groupEventsByEdition(events), [events]);
