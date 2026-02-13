@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ticket_snapshots: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          event_name: string | null
+          id: string
+          raw_data: Json | null
+          snapshot_date: string
+          ticket_type: string
+          tickets_sold: number
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          raw_data?: Json | null
+          snapshot_date?: string
+          ticket_type: string
+          tickets_sold?: number
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          raw_data?: Json | null
+          snapshot_date?: string
+          ticket_type?: string
+          tickets_sold?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
