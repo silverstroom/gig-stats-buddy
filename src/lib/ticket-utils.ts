@@ -240,3 +240,38 @@ export function getEditionTicketRows(edition: FestivalEdition): EditionTicketRow
 export function getTotalTickets(edition: FestivalEdition): number {
   return edition.events.reduce((sum, e) => sum + e.ticketsSold, 0);
 }
+
+export interface DailySalesDetail {
+  day: string;
+  date: string;
+  events: { eventName: string; sold: number }[];
+  total: number;
+}
+
+/**
+ * Get a detailed breakdown of tickets sold per day, grouped by event.
+ */
+export function getDailySalesBreakdown(edition: FestivalEdition): DailySalesDetail[] {
+  const days = getEditionDays(edition);
+
+  return days.map((d) => {
+    const label = formatDayLabel(d);
+    const eventsForDay: { eventName: string; sold: number }[] = [];
+
+    for (const event of edition.events) {
+      const eventDays = getEventDays(event, edition.key);
+      if (eventDays.includes(d)) {
+        eventsForDay.push({ eventName: event.name, sold: event.ticketsSold });
+      }
+    }
+
+    eventsForDay.sort((a, b) => b.sold - a.sold);
+
+    return {
+      day: label,
+      date: d,
+      events: eventsForDay,
+      total: eventsForDay.reduce((s, e) => s + e.sold, 0),
+    };
+  });
+}
