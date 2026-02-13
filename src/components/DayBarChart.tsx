@@ -9,6 +9,8 @@ const COLORS = [
   'hsl(250, 85%, 60%)',
   'hsl(165, 80%, 40%)',
   'hsl(35, 95%, 55%)',
+  'hsl(340, 80%, 55%)',
+  'hsl(200, 80%, 50%)',
 ];
 
 export function DayBarChart({ distribution }: DayBarChartProps) {
@@ -20,7 +22,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
           <BarChart data={distribution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 25%)" opacity={0.3} />
             <XAxis
-              dataKey="date"
+              dataKey="day"
               tick={{ fill: 'hsl(220, 10%, 50%)', fontSize: 13, fontFamily: 'Space Grotesk' }}
               axisLine={{ stroke: 'hsl(220, 15%, 25%)' }}
             />
@@ -40,7 +42,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
             />
             <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={60}>
               {distribution.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Bar>
           </BarChart>

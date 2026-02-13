@@ -1,17 +1,9 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { TicketType } from '@/lib/ticket-utils';
-
-interface DiceEvent {
-  id: string;
-  name: string;
-  startDatetime: string;
-  endDatetime: string;
-  ticketTypes: TicketType[];
-}
+import type { DiceEventRaw } from '@/lib/ticket-utils';
 
 export function useDiceEvents() {
-  const [events, setEvents] = useState<DiceEvent[]>([]);
+  const [events, setEvents] = useState<DiceEventRaw[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,20 +25,15 @@ export function useDiceEvents() {
       }
 
       const eventsData = data.data?.data?.viewer?.events?.edges || [];
-      const parsed: DiceEvent[] = eventsData.map((edge: any) => {
+      const parsed: DiceEventRaw[] = eventsData.map((edge: any) => {
         const node = edge.node;
-        const ticketTypes: TicketType[] = (node.ticketTypes || []).map((tt: any) => ({
-          name: tt.name,
-          sold: tt.totalTicketAllocationQty || 0,
-        }));
-
         return {
           id: node.id,
           name: node.name,
           startDatetime: node.startDatetime,
           endDatetime: node.endDatetime,
-          ticketTypes,
-          totalSold: node.tickets?.totalCount || 0,
+          ticketTypes: node.ticketTypes || [],
+          ticketsSold: node.tickets?.totalCount || 0,
         };
       });
 
