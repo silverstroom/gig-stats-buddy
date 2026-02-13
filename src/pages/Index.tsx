@@ -7,12 +7,14 @@ import {
   calculateEditionAttendance,
   getEditionTicketRows,
   getTotalTickets,
+  getDailySalesBreakdown,
   type FestivalEdition } from
 '@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
 import { TicketTypeTable } from '@/components/TicketTypeTable';
 import { DayDistributionTable } from '@/components/DayDistributionTable';
 import { DayBarChart } from '@/components/DayBarChart';
+import { DailySalesBreakdown } from '@/components/DailySalesBreakdown';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import colorfestBg from '@/assets/colorfest-bg.webp';
 
@@ -54,6 +56,12 @@ const Index = () => {
   const totalPresenze = useMemo(
     () => distribution.reduce((s, d) => s + d.count, 0),
     [distribution]
+  );
+
+  const isLatestEdition = editions.length > 0 && selectedEditionKey === editions[0].key;
+  const dailySalesBreakdown = useMemo(
+    () => (isLatestEdition && selectedEdition) ? getDailySalesBreakdown(selectedEdition) : [],
+    [isLatestEdition, selectedEdition]
   );
 
   return (
@@ -162,6 +170,10 @@ const Index = () => {
               <TicketTypeTable rows={ticketRows} />
               <DayDistributionTable distribution={distribution} />
             </div>
+
+            {dailySalesBreakdown.length > 0 && (
+              <DailySalesBreakdown breakdown={dailySalesBreakdown} />
+            )}
           </>
         )}
 
