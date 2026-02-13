@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Ticket, BarChart3, Calendar, RefreshCw, Users } from 'lucide-react';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
 import {
@@ -14,6 +14,7 @@ import { TicketTypeTable } from '@/components/TicketTypeTable';
 import { DayDistributionTable } from '@/components/DayDistributionTable';
 import { DayBarChart } from '@/components/DayBarChart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import colorfestBg from '@/assets/colorfest-bg.webp';
 
 const Index = () => {
   const { events, loading, error, fetchEvents } = useDiceEvents();
@@ -57,92 +58,100 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg gradient-primary">
-              <BarChart3 className="w-5 h-5 text-primary-foreground" />
+      {/* Hero Header */}
+      <header className="relative overflow-hidden">
+        <div className="absolute inset-0 hero-gradient opacity-90" />
+        <div
+          className="absolute inset-0 opacity-10 bg-cover bg-center mix-blend-overlay"
+          style={{ backgroundImage: `url(${colorfestBg})` }}
+        />
+        <div className="relative container mx-auto px-4 py-8 pb-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm">
+                <BarChart3 className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
+                  Color Fest Analytics
+                </h1>
+                <p className="text-sm text-primary-foreground/70">Monitoraggio vendite in tempo reale</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold font-display tracking-tight">DICE Analytics - Color Fest </h1>
-              <p className="text-xs text-muted-foreground">Monitoraggio Vendite Biglietti</p>
-            </div>
+            <Button
+              onClick={fetchEvents}
+              disabled={loading}
+              variant="secondary"
+              size="sm"
+              className="gap-2 font-semibold shadow-lg">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Aggiorna
+            </Button>
           </div>
-          <Button
-            onClick={fetchEvents}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="gap-2">
 
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Aggiorna
-          </Button>
+          {/* Edition Selector inside header */}
+          {editions.length > 0 && (
+            <div className="mt-6">
+              <Select value={selectedEditionKey || ''} onValueChange={setSelectedEditionKey}>
+                <SelectTrigger className="w-full max-w-md bg-primary-foreground/15 backdrop-blur-sm border-primary-foreground/20 text-primary-foreground font-semibold">
+                  <SelectValue placeholder="Seleziona un'edizione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {editions.map((edition) => (
+                    <SelectItem key={edition.key} value={edition.key}>
+                      {edition.label} ({edition.events.length} eventi)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="container mx-auto px-4 py-8 space-y-8 -mt-4">
         {/* Error State */}
-        {error &&
-        <div className="glass-card rounded-xl p-4 border-destructive/50 bg-destructive/5">
+        {error && (
+          <div className="glass-card rounded-2xl p-4 border-destructive/50 bg-destructive/5">
             <p className="text-sm text-destructive font-medium">Errore: {error}</p>
           </div>
-        }
+        )}
 
         {/* Loading */}
-        {loading &&
-        <div className="flex items-center justify-center py-16">
+        {loading && (
+          <div className="flex items-center justify-center py-16">
             <RefreshCw className="w-8 h-8 animate-spin text-primary" />
           </div>
-        }
-
-        {/* Edition Selector */}
-        {editions.length > 0 &&
-        <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Seleziona Edizione</label>
-            <Select value={selectedEditionKey || ''} onValueChange={setSelectedEditionKey}>
-              <SelectTrigger className="w-full max-w-md glass-card">
-                <SelectValue placeholder="Seleziona un'edizione..." />
-              </SelectTrigger>
-              <SelectContent>
-                {editions.map((edition) =>
-              <SelectItem key={edition.key} value={edition.key}>
-                    {edition.label} ({edition.events.length} eventi)
-                  </SelectItem>
-              )}
-              </SelectContent>
-            </Select>
-          </div>
-        }
+        )}
 
         {/* Stats */}
-        {selectedEdition &&
-        <>
+        {selectedEdition && (
+          <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
-              title="Biglietti Totali"
-              value={totalTickets}
-              subtitle="Biglietti venduti"
-              icon={<Ticket className="w-5 h-5" />}
-              colorClass="text-primary" />
+                title="Biglietti Totali"
+                value={totalTickets}
+                subtitle="Biglietti venduti"
+                icon={<Ticket className="w-5 h-5" />}
+                colorClass="text-primary" />
 
               <StatCard
-              title="Presenze Totali"
-              value={totalPresenze}
-              subtitle="Somma presenze giornaliere"
-              icon={<Users className="w-5 h-5" />}
-              colorClass="text-accent" />
+                title="Presenze Totali"
+                value={totalPresenze}
+                subtitle="Somma presenze giornaliere"
+                icon={<Users className="w-5 h-5" />}
+                colorClass="text-secondary"
+                glowClass="stat-glow-gold" />
 
-              {distribution.map((day, i) =>
-            <StatCard
-              key={day.date}
-              title={day.day}
-              value={day.count}
-              subtitle={`Presenze ${day.day}`}
-              colorClass={`text-chart-day${i % 3 + 1}`} />
-
-            )}
+              {distribution.map((day, i) => (
+                <StatCard
+                  key={day.date}
+                  title={day.day}
+                  value={day.count}
+                  subtitle={`Presenze ${day.day}`}
+                  icon={<CalendarDays className="w-5 h-5" />}
+                  colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'} />
+              ))}
             </div>
 
             {/* Chart */}
@@ -154,20 +163,20 @@ const Index = () => {
               <DayDistributionTable distribution={distribution} />
             </div>
           </>
-        }
+        )}
 
-        {!selectedEdition && !loading && events.length === 0 &&
-        <div className="text-center py-16 glass-card rounded-xl">
+        {!selectedEdition && !loading && events.length === 0 && (
+          <div className="text-center py-16 glass-card rounded-2xl">
             <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nessun dato disponibile</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
               Clicca "Aggiorna" per caricare i dati da DICE.
             </p>
           </div>
-        }
+        )}
       </main>
-    </div>);
-
+    </div>
+  );
 };
 
 export default Index;
