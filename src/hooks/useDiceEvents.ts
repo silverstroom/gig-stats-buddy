@@ -35,9 +35,9 @@ export function useDiceEvents() {
       const eventsData = data.data?.data?.viewer?.events?.edges || [];
       const parsed: DiceEvent[] = eventsData.map((edge: any) => {
         const node = edge.node;
-        const ticketTypes: TicketType[] = (node.ticketTypes?.edges || []).map((te: any) => ({
-          name: te.node.name,
-          sold: te.node.soldCount || 0,
+        const ticketTypes: TicketType[] = (node.ticketTypes || []).map((tt: any) => ({
+          name: tt.name,
+          sold: tt.totalTicketAllocationQty || 0,
         }));
 
         return {
@@ -46,6 +46,7 @@ export function useDiceEvents() {
           startDatetime: node.startDatetime,
           endDatetime: node.endDatetime,
           ticketTypes,
+          totalSold: node.tickets?.totalCount || 0,
         };
       });
 
