@@ -12,6 +12,7 @@ export interface DayDistribution {
 export interface DiceEventRaw {
   id: string;
   name: string;
+  state: string;
   startDatetime: string;
   endDatetime: string;
   ticketTypes: { id: string; name: string; price: number; totalTicketAllocationQty: number }[];

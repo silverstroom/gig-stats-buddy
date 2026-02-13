@@ -25,17 +25,20 @@ export function useDiceEvents() {
       }
 
       const eventsData = data.data?.data?.viewer?.events?.edges || [];
-      const parsed: DiceEventRaw[] = eventsData.map((edge: any) => {
-        const node = edge.node;
-        return {
-          id: node.id,
-          name: node.name,
-          startDatetime: node.startDatetime,
-          endDatetime: node.endDatetime,
-          ticketTypes: node.ticketTypes || [],
-          ticketsSold: node.tickets?.totalCount || 0,
-        };
-      });
+      const parsed: DiceEventRaw[] = eventsData
+        .filter((edge: any) => edge.node.state !== 'CANCELLED')
+        .map((edge: any) => {
+          const node = edge.node;
+          return {
+            id: node.id,
+            name: node.name,
+            state: node.state,
+            startDatetime: node.startDatetime,
+            endDatetime: node.endDatetime,
+            ticketTypes: node.ticketTypes || [],
+            ticketsSold: node.tickets?.totalCount || 0,
+          };
+        });
 
       setEvents(parsed);
     } catch (err) {
