@@ -50,7 +50,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6 bg-amber-400">
+    <div className="glass-card rounded-2xl p-6 bg-[#fed26c]">
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-bold text-lg">Distribuzione Presenze per Giorno</h3>
         <button
