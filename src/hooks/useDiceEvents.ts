@@ -9,10 +9,8 @@ export interface SnapshotEntry {
 }
 
 export interface SnapshotData {
-  yesterday: SnapshotEntry[] | null;
-  yesterdayDate: string | null;
-  dayBefore: SnapshotEntry[] | null;
-  dayBeforeDate: string | null;
+  todayBaseline: SnapshotEntry[] | null;
+  yesterdayBaseline: SnapshotEntry[] | null;
 }
 
 export function useDiceEvents() {
@@ -20,8 +18,8 @@ export function useDiceEvents() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<SnapshotData>({
-    yesterday: null, yesterdayDate: null,
-    dayBefore: null, dayBeforeDate: null,
+    todayBaseline: null,
+    yesterdayBaseline: null,
   });
 
   const fetchEvents = useCallback(async () => {
@@ -54,22 +52,11 @@ export function useDiceEvents() {
 
       setEvents(parsed);
 
-      // Fetch previous snapshots (yesterday + day before)
-      try {
-        const { data: snapData } = await supabase.functions.invoke('dice-events', {
-          body: { action: 'get_previous_snapshots' },
-        });
-        if (snapData?.success) {
-          setSnapshots({
-            yesterday: snapData.yesterday || null,
-            yesterdayDate: snapData.yesterday_date || null,
-            dayBefore: snapData.dayBefore || null,
-            dayBeforeDate: snapData.dayBefore_date || null,
-          });
-        }
-      } catch {
-        console.error('Could not fetch previous snapshots');
-      }
+      // Snapshots are returned inline from fetch_events
+      setSnapshots({
+        todayBaseline: data.todayBaseline || null,
+        yesterdayBaseline: data.yesterdayBaseline || null,
+      });
     } catch (err) {
       console.error('Error fetching DICE events:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

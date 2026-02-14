@@ -68,7 +68,7 @@ const Index = () => {
 
   const todaySalesPerDay = useMemo(
     () => (isLatestEdition && selectedEdition)
-      ? getTodaySalesPerDay(selectedEdition, snapshots.yesterday, snapshots.dayBefore)
+      ? getTodaySalesPerDay(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
       : [],
     [isLatestEdition, selectedEdition, snapshots]
   );
@@ -163,7 +163,7 @@ const Index = () => {
                 subtitle="Biglietti venduti"
                 icon={<Ticket className="w-5 h-5" />}
                 colorClass="text-primary"
-                todaySales={isLatestEdition && snapshots.yesterday ? { soldToday: totalSoldToday, soldYesterday: totalSoldYesterday } : null}
+                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalSoldToday, soldYesterday: totalSoldYesterday } : null}
               />
 
               <StatCard
@@ -182,7 +182,7 @@ const Index = () => {
                   subtitle={`Presenze ${day.day}`}
                   icon={<CalendarDays className="w-5 h-5" />}
                   colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
-                  todaySales={isLatestEdition && snapshots.yesterday ? todaySalesMap.get(day.date) || null : null}
+                  todaySales={isLatestEdition && snapshots.todayBaseline ? todaySalesMap.get(day.date) || null : null}
                 />
               ))}
             </div>
