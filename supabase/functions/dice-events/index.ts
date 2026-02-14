@@ -110,35 +110,54 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (action === 'get_previous_snapshot') {
+    if (action === 'get_previous_snapshots') {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const sb = createClient(supabaseUrl, supabaseKey);
       const today = getTodayISO();
 
-      // Get the most recent snapshot date before today
-      const { data: prevDateRow } = await sb
+      // Get the two most recent snapshot dates before today
+      const { data: prevDates } = await sb
         .from('ticket_snapshots')
         .select('snapshot_date')
         .lt('snapshot_date', today)
         .order('snapshot_date', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(100);
 
-      if (!prevDateRow) {
+      // Deduplicate dates
+      const uniqueDates = [...new Set((prevDates || []).map((r: any) => r.snapshot_date))].slice(0, 2);
+
+      if (uniqueDates.length === 0) {
         return new Response(
-          JSON.stringify({ success: true, snapshot: null, message: 'No previous snapshot found' }),
+          JSON.stringify({ success: true, yesterday: null, dayBefore: null }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      const { data: snapshot } = await sb
+      const { data: yesterdaySnap } = await sb
         .from('ticket_snapshots')
         .select('event_id, event_name, tickets_sold')
-        .eq('snapshot_date', prevDateRow.snapshot_date);
+        .eq('snapshot_date', uniqueDates[0]);
+
+      let dayBeforeSnap = null;
+      let dayBeforeDate = null;
+      if (uniqueDates.length > 1) {
+        const { data } = await sb
+          .from('ticket_snapshots')
+          .select('event_id, event_name, tickets_sold')
+          .eq('snapshot_date', uniqueDates[1]);
+        dayBeforeSnap = data;
+        dayBeforeDate = uniqueDates[1];
+      }
 
       return new Response(
-        JSON.stringify({ success: true, snapshot, snapshot_date: prevDateRow.snapshot_date }),
+        JSON.stringify({
+          success: true,
+          yesterday: yesterdaySnap,
+          yesterday_date: uniqueDates[0],
+          dayBefore: dayBeforeSnap,
+          dayBefore_date: dayBeforeDate,
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
