@@ -36,7 +36,7 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
       </div>
 
       {/* Today sales badge */}
-      {todaySales && todaySales.soldToday >= 0 && (
+      {todaySales !== null && todaySales !== undefined && (
         <div className="mt-3 pt-3 border-t border-border/50">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
