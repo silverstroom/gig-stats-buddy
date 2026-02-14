@@ -2,18 +2,27 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { DiceEventRaw } from '@/lib/ticket-utils';
 
-export interface PreviousSnapshot {
+export interface SnapshotEntry {
   event_id: string;
   event_name: string;
   tickets_sold: number;
+}
+
+export interface SnapshotData {
+  yesterday: SnapshotEntry[] | null;
+  yesterdayDate: string | null;
+  dayBefore: SnapshotEntry[] | null;
+  dayBeforeDate: string | null;
 }
 
 export function useDiceEvents() {
   const [events, setEvents] = useState<DiceEventRaw[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previousSnapshot, setPreviousSnapshot] = useState<PreviousSnapshot[] | null>(null);
-  const [snapshotDate, setSnapshotDate] = useState<string | null>(null);
+  const [snapshots, setSnapshots] = useState<SnapshotData>({
+    yesterday: null, yesterdayDate: null,
+    dayBefore: null, dayBeforeDate: null,
+  });
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -24,13 +33,8 @@ export function useDiceEvents() {
         body: { action: 'fetch_events' },
       });
 
-      if (fnError) {
-        throw new Error(fnError.message);
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to fetch events');
-      }
+      if (fnError) throw new Error(fnError.message);
+      if (!data?.success) throw new Error(data?.error || 'Failed to fetch events');
 
       const eventsData = data.data?.data?.viewer?.events?.edges || [];
       const parsed: DiceEventRaw[] = eventsData
@@ -50,17 +54,21 @@ export function useDiceEvents() {
 
       setEvents(parsed);
 
-      // Fetch previous snapshot
+      // Fetch previous snapshots (yesterday + day before)
       try {
         const { data: snapData } = await supabase.functions.invoke('dice-events', {
-          body: { action: 'get_previous_snapshot' },
+          body: { action: 'get_previous_snapshots' },
         });
-        if (snapData?.success && snapData.snapshot) {
-          setPreviousSnapshot(snapData.snapshot);
-          setSnapshotDate(snapData.snapshot_date);
+        if (snapData?.success) {
+          setSnapshots({
+            yesterday: snapData.yesterday || null,
+            yesterdayDate: snapData.yesterday_date || null,
+            dayBefore: snapData.dayBefore || null,
+            dayBeforeDate: snapData.dayBefore_date || null,
+          });
         }
       } catch {
-        console.error('Could not fetch previous snapshot');
+        console.error('Could not fetch previous snapshots');
       }
     } catch (err) {
       console.error('Error fetching DICE events:', err);
@@ -70,5 +78,5 @@ export function useDiceEvents() {
     }
   }, []);
 
-  return { events, loading, error, fetchEvents, previousSnapshot, snapshotDate };
+  return { events, loading, error, fetchEvents, snapshots };
 }

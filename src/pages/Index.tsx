@@ -2,13 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
-import { TodaySales } from '@/components/TodaySales';
 import {
   groupEventsByEdition,
   calculateEditionAttendance,
   getEditionTicketRows,
   getTotalTickets,
   getDailySalesBreakdown,
+  getTodaySalesPerDay,
   type FestivalEdition } from
 '@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import colorfestBg from '@/assets/colorfest-bg.webp';
 
 const Index = () => {
-  const { events, loading, error, fetchEvents, previousSnapshot, snapshotDate } = useDiceEvents();
+  const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,10 +60,30 @@ const Index = () => {
   );
 
   const isLatestEdition = editions.length > 0 && selectedEditionKey === editions[0].key;
+
   const dailySalesBreakdown = useMemo(
     () => (isLatestEdition && selectedEdition) ? getDailySalesBreakdown(selectedEdition) : [],
     [isLatestEdition, selectedEdition]
   );
+
+  const todaySalesPerDay = useMemo(
+    () => (isLatestEdition && selectedEdition)
+      ? getTodaySalesPerDay(selectedEdition, snapshots.yesterday, snapshots.dayBefore)
+      : [],
+    [isLatestEdition, selectedEdition, snapshots]
+  );
+
+  // Map date -> today sales for quick lookup
+  const todaySalesMap = useMemo(() => {
+    const m = new Map<string, { soldToday: number; soldYesterday: number }>();
+    for (const d of todaySalesPerDay) {
+      m.set(d.date, { soldToday: d.soldToday, soldYesterday: d.soldYesterday });
+    }
+    return m;
+  }, [todaySalesPerDay]);
+
+  const totalSoldToday = todaySalesPerDay.reduce((s, d) => s + d.soldToday, 0);
+  const totalSoldYesterday = todaySalesPerDay.reduce((s, d) => s + d.soldYesterday, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -142,7 +162,9 @@ const Index = () => {
                 value={totalTickets}
                 subtitle="Biglietti venduti"
                 icon={<Ticket className="w-5 h-5" />}
-                colorClass="text-primary" />
+                colorClass="text-primary"
+                todaySales={isLatestEdition && snapshots.yesterday ? { soldToday: totalSoldToday, soldYesterday: totalSoldYesterday } : null}
+              />
 
               <StatCard
                 title="Presenze Totali"
@@ -159,17 +181,11 @@ const Index = () => {
                   value={day.count}
                   subtitle={`Presenze ${day.day}`}
                   icon={<CalendarDays className="w-5 h-5" />}
-                  colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'} />
+                  colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
+                  todaySales={isLatestEdition && snapshots.yesterday ? todaySalesMap.get(day.date) || null : null}
+                />
               ))}
             </div>
-
-            {isLatestEdition && previousSnapshot && snapshotDate && (
-              <TodaySales
-                events={selectedEdition.events}
-                previousSnapshot={previousSnapshot}
-                snapshotDate={snapshotDate}
-              />
-            )}
 
             {/* Chart */}
             <DayBarChart distribution={distribution} />
