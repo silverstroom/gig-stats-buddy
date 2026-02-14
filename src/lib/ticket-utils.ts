@@ -249,47 +249,47 @@ export interface TodaySalesPerDay {
 
 /**
  * Compute how many tickets were sold today for each festival day.
- * "today" = current totals - yesterday's snapshot, broken down by which days each event covers.
- * "yesterday" = yesterday's snapshot - dayBefore snapshot, for % change.
+ * "soldToday" = current totals - todayBaseline (first snapshot of the day).
+ * "soldYesterday" = todayBaseline - yesterdayBaseline, for % change comparison.
  */
 export function getTodaySalesPerDay(
   edition: FestivalEdition,
-  yesterday: { event_id: string; tickets_sold: number }[] | null,
-  dayBefore: { event_id: string; tickets_sold: number }[] | null,
+  todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+  yesterdayBaseline: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesPerDay[] {
   const days = getEditionDays(edition);
-  if (!yesterday) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
+  if (!todayBaseline) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
 
-  const yesterdayMap = new Map(yesterday.map(s => [s.event_id, s.tickets_sold]));
-  const dayBeforeMap = dayBefore ? new Map(dayBefore.map(s => [s.event_id, s.tickets_sold])) : null;
+  const todayMap = new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]));
+  const yesterdayMap = yesterdayBaseline ? new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold])) : null;
 
-  const todayPerDay: Record<string, number> = {};
-  const yesterdayPerDay: Record<string, number> = {};
+  const soldTodayPerDay: Record<string, number> = {};
+  const soldYesterdayPerDay: Record<string, number> = {};
   for (const d of days) {
-    todayPerDay[d] = 0;
-    yesterdayPerDay[d] = 0;
+    soldTodayPerDay[d] = 0;
+    soldYesterdayPerDay[d] = 0;
   }
 
   for (const event of edition.events) {
     const eventDays = getEventDays(event, edition.key);
-    const prevSold = yesterdayMap.get(event.id) ?? 0;
-    const diffToday = event.ticketsSold - prevSold;
+    const baselineSold = todayMap.get(event.id) ?? event.ticketsSold;
+    const diffToday = event.ticketsSold - baselineSold;
 
-    const dbSold = dayBeforeMap ? (dayBeforeMap.get(event.id) ?? 0) : 0;
-    const diffYesterday = prevSold - dbSold;
+    const ydSold = yesterdayMap ? (yesterdayMap.get(event.id) ?? 0) : 0;
+    const diffYesterday = baselineSold - ydSold;
 
     for (const d of eventDays) {
-      if (d in todayPerDay) {
-        todayPerDay[d] += Math.max(0, diffToday);
-        yesterdayPerDay[d] += Math.max(0, diffYesterday);
+      if (d in soldTodayPerDay) {
+        soldTodayPerDay[d] += Math.max(0, diffToday);
+        soldYesterdayPerDay[d] += Math.max(0, diffYesterday);
       }
     }
   }
 
   return days.map(d => ({
     date: d,
-    soldToday: todayPerDay[d],
-    soldYesterday: yesterdayPerDay[d],
+    soldToday: soldTodayPerDay[d],
+    soldYesterday: soldYesterdayPerDay[d],
   }));
 }
 
