@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
+import { TodaySales } from '@/components/TodaySales';
 import {
   groupEventsByEdition,
   calculateEditionAttendance,
@@ -19,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import colorfestBg from '@/assets/colorfest-bg.webp';
 
 const Index = () => {
-  const { events, loading, error, fetchEvents } = useDiceEvents();
+  const { events, loading, error, fetchEvents, previousSnapshot, snapshotDate } = useDiceEvents();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -161,6 +162,14 @@ const Index = () => {
                   colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'} />
               ))}
             </div>
+
+            {isLatestEdition && previousSnapshot && snapshotDate && (
+              <TodaySales
+                events={selectedEdition.events}
+                previousSnapshot={previousSnapshot}
+                snapshotDate={snapshotDate}
+              />
+            )}
 
             {/* Chart */}
             <DayBarChart distribution={distribution} />
