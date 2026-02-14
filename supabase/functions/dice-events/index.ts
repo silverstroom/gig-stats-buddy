@@ -1,9 +1,15 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const DICE_GRAPHQL_URL = 'https://partners-endpoint.dice.fm/graphql';
+
+function getTodayISO(): string {
+  return new Date().toISOString().split('T')[0];
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -19,10 +25,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action } = await req.json();
+    const body = await req.json();
+    const { action } = body;
 
     if (action === 'fetch_events') {
-      // Fetch events list
       const query = `{
         viewer {
           events(first: 50) {
@@ -69,14 +75,75 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Save daily snapshot
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const sb = createClient(supabaseUrl, supabaseKey);
+        const today = getTodayISO();
+
+        const edges = data?.data?.viewer?.events?.edges || [];
+        const rows = edges
+          .filter((edge: any) => edge.node.state !== 'CANCELLED')
+          .map((edge: any) => ({
+            event_id: edge.node.id,
+            event_name: edge.node.name,
+            ticket_type: 'total',
+            tickets_sold: edge.node.tickets?.totalCount || 0,
+            snapshot_date: today,
+          }));
+
+        if (rows.length > 0) {
+          // Upsert: one snapshot per event per day
+          await sb
+            .from('ticket_snapshots')
+            .upsert(rows, { onConflict: 'event_id,snapshot_date' })
+            .throwOnError();
+        }
+      } catch (snapErr) {
+        console.error('Snapshot save error (non-blocking):', snapErr);
+      }
+
       return new Response(
         JSON.stringify({ success: true, data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    if (action === 'get_previous_snapshot') {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const sb = createClient(supabaseUrl, supabaseKey);
+      const today = getTodayISO();
+
+      // Get the most recent snapshot date before today
+      const { data: prevDateRow } = await sb
+        .from('ticket_snapshots')
+        .select('snapshot_date')
+        .lt('snapshot_date', today)
+        .order('snapshot_date', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!prevDateRow) {
+        return new Response(
+          JSON.stringify({ success: true, snapshot: null, message: 'No previous snapshot found' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: snapshot } = await sb
+        .from('ticket_snapshots')
+        .select('event_id, event_name, tickets_sold')
+        .eq('snapshot_date', prevDateRow.snapshot_date);
+
+      return new Response(
+        JSON.stringify({ success: true, snapshot, snapshot_date: prevDateRow.snapshot_date }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (action === 'fetch_event_tickets') {
-      const body = await req.json().catch(() => ({}));
       const eventId = body.eventId;
 
       const query = `{
