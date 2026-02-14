@@ -8,7 +8,10 @@ const corsHeaders = {
 const DICE_GRAPHQL_URL = 'https://partners-endpoint.dice.fm/graphql';
 
 function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  // Use Italian timezone so "today" resets at midnight Rome time
+  const now = new Date();
+  const rome = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' }); // returns YYYY-MM-DD
+  return rome;
 }
 
 Deno.serve(async (req) => {
