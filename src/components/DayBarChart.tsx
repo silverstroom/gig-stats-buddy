@@ -50,7 +50,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-6 bg-amber-400">
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-bold text-lg">Distribuzione Presenze per Giorno</h3>
         <button
@@ -95,7 +95,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
 
 
           return (
-            <div key={d.date} className="flex flex-col items-center text-muted-foreground">
+            <div key={d.date} className="flex flex-col items-center text-primary-foreground">
               <p className="text-sm font-bold mb-2">{d.day}</p>
               <div className="h-[180px] w-[180px]">
                 <ResponsiveContainer width="100%" height="100%">
