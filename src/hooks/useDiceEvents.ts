@@ -2,10 +2,18 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { DiceEventRaw } from '@/lib/ticket-utils';
 
+export interface PreviousSnapshot {
+  event_id: string;
+  event_name: string;
+  tickets_sold: number;
+}
+
 export function useDiceEvents() {
   const [events, setEvents] = useState<DiceEventRaw[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previousSnapshot, setPreviousSnapshot] = useState<PreviousSnapshot[] | null>(null);
+  const [snapshotDate, setSnapshotDate] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -41,6 +49,19 @@ export function useDiceEvents() {
         });
 
       setEvents(parsed);
+
+      // Fetch previous snapshot
+      try {
+        const { data: snapData } = await supabase.functions.invoke('dice-events', {
+          body: { action: 'get_previous_snapshot' },
+        });
+        if (snapData?.success && snapData.snapshot) {
+          setPreviousSnapshot(snapData.snapshot);
+          setSnapshotDate(snapData.snapshot_date);
+        }
+      } catch {
+        console.error('Could not fetch previous snapshot');
+      }
     } catch (err) {
       console.error('Error fetching DICE events:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -49,5 +70,5 @@ export function useDiceEvents() {
     }
   }, []);
 
-  return { events, loading, error, fetchEvents };
+  return { events, loading, error, fetchEvents, previousSnapshot, snapshotDate };
 }
