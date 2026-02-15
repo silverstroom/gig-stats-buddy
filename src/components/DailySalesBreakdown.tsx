@@ -1,57 +1,75 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ShoppingBag } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { DailySalesDetail } from '@/lib/ticket-utils';
 
 interface Props {
   breakdown: DailySalesDetail[];
 }
 
-const DAY_COLORS = ['hsl(220, 100%, 55%)', 'hsl(42, 100%, 50%)', 'hsl(280, 80%, 55%)'];
+const PIE_COLORS = [
+  'hsl(220, 100%, 55%)',
+  'hsl(42, 100%, 50%)',
+  'hsl(280, 80%, 55%)',
+  'hsl(160, 70%, 45%)',
+  'hsl(350, 80%, 55%)',
+  'hsl(30, 90%, 55%)',
+  'hsl(190, 80%, 50%)',
+];
 
-function DayChart({ day, colorIndex }: { day: DailySalesDetail; colorIndex: number }) {
+function DayChart({ day }: { day: DailySalesDetail }) {
   const data = day.events.map((ev) => ({
-    name: ev.eventName.length > 25 ? ev.eventName.slice(0, 25) + '…' : ev.eventName,
-    fullName: ev.eventName,
-    venduti: ev.sold,
+    name: ev.eventName,
+    value: ev.sold,
   }));
 
   if (data.length === 0) return null;
 
-  const barColor = DAY_COLORS[colorIndex % DAY_COLORS.length];
-  const chartHeight = Math.max(120, data.length * 36 + 20);
-
   return (
-    <div className="w-full" style={{ height: chartHeight }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 0 }}>
-          <XAxis type="number" hide />
-          <YAxis
-            type="category"
-            dataKey="name"
-            width={140}
-            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip
-            formatter={(value: number) => [value.toLocaleString('it-IT'), 'Venduti']}
-            labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || ''}
-            contentStyle={{
-              background: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-              fontSize: '12px',
-            }}
-          />
-          <Bar dataKey="venduti" radius={[0, 4, 4, 0]} barSize={18}>
-            {data.map((_, i) => (
-              <Cell key={i} fill={barColor} fillOpacity={0.85} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="flex items-center gap-4">
+      <div className="w-[160px] h-[160px] flex-shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={40}
+              outerRadius={70}
+              dataKey="value"
+              stroke="none"
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value: number) => [value.toLocaleString('it-IT'), 'Venduti']}
+              contentStyle={{
+                background: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex flex-col gap-1 min-w-0">
+        {data.map((item, i) => (
+          <div key={i} className="flex items-center gap-1.5 text-[10px]">
+            <span
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+            />
+            <span className="text-muted-foreground truncate">{item.name}</span>
+            <span className="font-mono font-semibold text-foreground ml-auto whitespace-nowrap">
+              {item.value.toLocaleString('it-IT')}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -81,7 +99,7 @@ export function DailySalesBreakdown({ breakdown }: Props) {
             </h4>
 
             {/* Chart */}
-            <DayChart day={day} colorIndex={idx} />
+            <DayChart day={day} />
 
             {/* Table */}
             <div className="rounded-lg border overflow-hidden mt-2">
