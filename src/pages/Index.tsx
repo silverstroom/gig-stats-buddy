@@ -9,6 +9,7 @@ import {
   getTotalTickets,
   getDailySalesBreakdown,
   getTodaySalesPerDay,
+  getTodaySalesBreakdown,
   type FestivalEdition } from
 '@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
@@ -84,6 +85,13 @@ const Index = () => {
 
   const totalSoldToday = todaySalesPerDay.reduce((s, d) => s + d.soldToday, 0);
   const totalSoldYesterday = todaySalesPerDay.reduce((s, d) => s + d.soldYesterday, 0);
+
+  const todayBreakdown = useMemo(
+    () => (isLatestEdition && selectedEdition)
+      ? getTodaySalesBreakdown(selectedEdition, snapshots.todayBaseline)
+      : [],
+    [isLatestEdition, selectedEdition, snapshots]
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,6 +172,7 @@ const Index = () => {
                 icon={<Ticket className="w-5 h-5" />}
                 colorClass="text-primary"
                 todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalSoldToday, soldYesterday: totalSoldYesterday } : null}
+                todayBreakdown={isLatestEdition ? todayBreakdown : undefined}
               />
 
               <StatCard
