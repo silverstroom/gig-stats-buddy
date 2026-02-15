@@ -14,7 +14,7 @@ const SOLD_COLORS = [
 'hsl(280, 80%, 55%)'];
 
 
-const REMAINING_COLOR = 'hsl(220, 10%, 20%)';
+const REMAINING_COLOR = 'hsl(40, 30%, 85%)';
 
 function getStoredCapacities(days: string[]): Record<string, number> {
   try {
@@ -52,16 +52,15 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
   return (
     <div className="glass-card rounded-2xl p-6 bg-[#fed26c]">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-bold text-lg">Distribuzione Presenze per Giorno</h3>
+        <h3 className="font-bold text-lg text-[#1a1a1a]">Distribuzione Presenze per Giorno</h3>
         <button
           onClick={() => setEditing(!editing)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-
+          className="flex items-center gap-1.5 text-xs text-[#5a4a20] hover:text-[#1a1a1a] transition-colors">
           <Settings2 className="w-4 h-4" />
           {editing ? 'Chiudi' : 'Imposta capacità'}
         </button>
       </div>
-      <p className="text-xs text-muted-foreground mb-6">Biglietti venduti vs capacità massima per giorno</p>
+      <p className="text-xs text-[#5a4a20] mb-6">Biglietti venduti vs capacità massima per giorno</p>
 
       {editing &&
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 p-4 rounded-xl bg-muted/30 border border-border/50">
@@ -95,8 +94,8 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
 
 
           return (
-            <div key={d.date} className="flex flex-col items-center text-primary-foreground">
-              <p className="text-sm font-bold mb-2">{d.day}</p>
+            <div key={d.date} className="flex flex-col items-center">
+              <p className="text-sm font-bold mb-2 text-[#1a1a1a]">{d.day}</p>
               <div className="h-[180px] w-[180px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -117,7 +116,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                         value={`${pct}%`}
                         position="center"
                         style={{
-                          fill: 'hsl(45, 20%, 95%)',
+                          fill: '#1a1a1a',
                           fontSize: '22px',
                           fontWeight: 800,
                           fontFamily: 'JetBrains Mono'
@@ -127,8 +126,8 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xs font-mono text-muted-foreground mt-1">
-                <span className="text-foreground font-bold">{sold.toLocaleString('it-IT')}</span>
+              <p className="text-xs font-mono text-[#5a4a20] mt-1">
+                <span className="text-[#1a1a1a] font-bold">{sold.toLocaleString('it-IT')}</span>
                 {' / '}
                 {cap.toLocaleString('it-IT')}
               </p>
