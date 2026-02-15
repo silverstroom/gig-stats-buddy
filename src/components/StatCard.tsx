@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import type { TodaySalesEventDetail } from '@/lib/ticket-utils';
 
 interface StatCardProps {
   title: string;
@@ -9,9 +10,10 @@ interface StatCardProps {
   colorClass?: string;
   glowClass?: string;
   todaySales?: { soldToday: number; soldYesterday: number } | null;
+  todayBreakdown?: TodaySalesEventDetail[];
 }
 
-export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', glowClass = 'stat-glow', todaySales }: StatCardProps) {
+export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', glowClass = 'stat-glow', todaySales, todayBreakdown }: StatCardProps) {
   const pctChange = todaySales && todaySales.soldYesterday > 0
     ? Math.round(((todaySales.soldToday - todaySales.soldYesterday) / todaySales.soldYesterday) * 100)
     : null;
@@ -60,6 +62,18 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
               )}
             </div>
           </div>
+
+          {/* Breakdown detail */}
+          {todayBreakdown && todayBreakdown.length > 0 && (
+            <div className="mt-2 space-y-0.5">
+              {todayBreakdown.map((item) => (
+                <div key={item.eventName} className="flex items-center justify-between text-[10px]">
+                  <span className="text-muted-foreground truncate mr-2">{item.eventName}</span>
+                  <span className="font-mono font-semibold text-foreground whitespace-nowrap">+{item.soldToday}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -244,13 +244,16 @@ export function getTotalTickets(edition: FestivalEdition): number {
 export interface TodaySalesPerDay {
   date: string;
   soldToday: number;
-  soldYesterday: number; // diff between dayBefore and yesterday for % comparison
+  soldYesterday: number;
+}
+
+export interface TodaySalesEventDetail {
+  eventName: string;
+  soldToday: number;
 }
 
 /**
  * Compute how many tickets were sold today for each festival day.
- * "soldToday" = current totals - todayBaseline (first snapshot of the day).
- * "soldYesterday" = todayBaseline - yesterdayBaseline, for % change comparison.
  */
 export function getTodaySalesPerDay(
   edition: FestivalEdition,
@@ -291,6 +294,30 @@ export function getTodaySalesPerDay(
     soldToday: soldTodayPerDay[d],
     soldYesterday: soldYesterdayPerDay[d],
   }));
+}
+
+/**
+ * Get per-event breakdown of today's sales (total across all days).
+ * Only returns events that had > 0 sales today.
+ */
+export function getTodaySalesBreakdown(
+  edition: FestivalEdition,
+  todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+): TodaySalesEventDetail[] {
+  if (!todayBaseline) return [];
+
+  const todayMap = new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]));
+  const details: TodaySalesEventDetail[] = [];
+
+  for (const event of edition.events) {
+    const baselineSold = todayMap.get(event.id) ?? event.ticketsSold;
+    const diffToday = Math.max(0, event.ticketsSold - baselineSold);
+    if (diffToday > 0) {
+      details.push({ eventName: event.name, soldToday: diffToday });
+    }
+  }
+
+  return details.sort((a, b) => b.soldToday - a.soldToday);
 }
 
 export interface DailySalesDetail {
