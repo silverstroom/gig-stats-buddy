@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, CalendarRange, BarChart3 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CalendarRange, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { format, addDays, differenceInDays, isSameDay } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
@@ -9,39 +9,67 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
-/** Edition metadata with key matching ticket-utils */
+/* ── Edition definitions ── */
 const EDITIONS = [
-  { key: 'cf-14', label: 'Color Fest 14', year: 2026, color: 'hsl(220, 100%, 55%)' },
-  { key: 'cf-13', label: 'Color Fest 13', year: 2025, color: 'hsl(42, 100%, 50%)' },
-  { key: 'cf-12', label: 'Color Fest 12', year: 2024, color: 'hsl(280, 80%, 55%)' },
-  { key: 'cf-summer-2023', label: 'Color Fest 11', year: 2023, color: 'hsl(160, 70%, 45%)' },
-  { key: 'cf-summer-2022', label: 'Color Fest 10', year: 2022, color: 'hsl(350, 80%, 55%)' },
+  { key: 'CF14', label: 'Color Fest 14', year: 2026, color: 'hsl(220, 100%, 55%)' },
+  { key: 'CF13', label: 'Color Fest 13', year: 2025, color: 'hsl(42, 100%, 50%)' },
+  { key: 'CF12', label: 'Color Fest 12', year: 2024, color: 'hsl(280, 80%, 55%)' },
+  { key: 'CF11', label: 'Color Fest 11', year: 2023, color: 'hsl(160, 70%, 45%)' },
+  { key: 'CF10', label: 'Color Fest 10', year: 2022, color: 'hsl(350, 80%, 55%)' },
 ];
 
-/** Map edition key prefix in event names */
-function editionKeyFromEventName(name: string): string | null {
-  const numbered = name.match(/Color Fest\s*(\d+)/i);
-  if (numbered) return `cf-${numbered[1]}`;
-  if (/color fest/i.test(name)) {
-    // try to infer from other patterns
-    return null; // will match via event lookup
-  }
+/* ── Event-ID → edition for unnumbered "Color Fest" events ── */
+const EVENT_ID_EDITION_MAP: Record<string, string> = {
+  // CF10 (2022) – IDs in the 110xxx–113xxx range
+  'RXZlbnQ6MTEwMTkz': 'CF10', // Abbonamento Full
+  'RXZlbnQ6MTExMDEz': 'CF10', // 11 Agosto One Day
+  'RXZlbnQ6MTExMDE3': 'CF10', // 12 Agosto One Day
+  'RXZlbnQ6MTExMDE4': 'CF10', // 13 Agosto One Day
+  'RXZlbnQ6MTEyNTkz': 'CF10', // 11-12 Agosto Two Days
+  'RXZlbnQ6MTEzMDM5': 'CF10', // 12-13 Agosto Two Days
+  'RXZlbnQ6MTEzMDQw': 'CF10', // 11-13 Agosto Two Days
+  // CF11 (2023) – IDs in the 163xxx range
+  'RXZlbnQ6MTYzMDAw': 'CF11', // Abbonamento Full
+  'RXZlbnQ6MTYzMzA5': 'CF11', // 11 Agosto One Day
+  'RXZlbnQ6MTYzMzEx': 'CF11', // 12 Agosto One Day
+  'RXZlbnQ6MTYzMzEz': 'CF11', // 11-12 Agosto Two Days
+  'RXZlbnQ6MTYzMzE0': 'CF11', // 13 Agosto BECOLOR
+  'RXZlbnQ6MTYzMzE1': 'CF11', // 12-13 Agosto Two Days
+  'RXZlbnQ6MTYzMzE2': 'CF11', // 11-13 Agosto Two Days
+};
+
+function classifyEvent(eventName: string, eventId: string | null): string | null {
+  // 1) Try numbered match: "Color Fest 14"
+  const m = eventName.match(/Color Fest\s*(\d+)/i);
+  if (m) return `CF${m[1]}`;
+  // 2) BECOLOR @ Color Fest (unnumbered) – check event_id
+  // 3) Unnumbered "Color Fest" – use event_id map
+  if (eventId && EVENT_ID_EDITION_MAP[eventId]) return EVENT_ID_EDITION_MAP[eventId];
+  // Exclude Winter, Pasquetta, Factory, etc.
+  if (/winter|pasquetta|factory/i.test(eventName)) return null;
+  // Generic "Color Fest" without ID mapping → skip
   return null;
 }
 
-interface ComparisonRow {
-  date: string;
+type Mode = 'single' | 'range';
+
+interface EditionTotal {
+  key: string;
   label: string;
-  [editionKey: string]: string | number;
+  color: string;
+  total: number;
+  events: { name: string; sold: number }[];
 }
 
-type Mode = 'single' | 'range';
+const PIE_COLORS = [
+  'hsl(220, 100%, 55%)', 'hsl(42, 100%, 50%)', 'hsl(280, 80%, 55%)',
+  'hsl(160, 70%, 45%)', 'hsl(350, 80%, 55%)', 'hsl(30, 90%, 55%)',
+];
 
 const Monitoraggio = () => {
   const navigate = useNavigate();
@@ -53,106 +81,85 @@ const Monitoraggio = () => {
   });
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [comparisonData, setComparisonData] = useState<ComparisonRow[]>([]);
-  const [editionsFound, setEditionsFound] = useState<typeof EDITIONS>([]);
+  const [editionTotals, setEditionTotals] = useState<EditionTotal[]>([]);
+  const [snapshotDates, setSnapshotDates] = useState<string[]>([]);
 
   const selectedDates = useMemo(() => {
-    if (mode === 'single') {
-      return { from: singleDate, to: singleDate };
-    }
+    if (mode === 'single') return { from: singleDate, to: singleDate };
     return { from: dateRange?.from || new Date(), to: dateRange?.to || new Date() };
   }, [mode, singleDate, dateRange]);
+
+  // Fetch available snapshot dates on mount
+  useEffect(() => {
+    supabase
+      .from('ticket_snapshots')
+      .select('snapshot_date')
+      .order('snapshot_date', { ascending: false })
+      .limit(1000)
+      .then(({ data }) => {
+        if (data) {
+          const unique = [...new Set(data.map(r => r.snapshot_date.split('T')[0]))];
+          setSnapshotDates(unique);
+        }
+      });
+  }, []);
 
   const fetchComparison = useCallback(async () => {
     setLoading(true);
     try {
       const { from, to } = selectedDates;
-      const dayCount = differenceInDays(to, from) + 1;
+      const toStr = format(addDays(to, 1), 'yyyy-MM-dd');
+      const fromStr = format(from, 'yyyy-MM-dd');
 
-      // For each edition, build the equivalent date range in that edition's year
-      const results: Map<string, Map<string, number>> = new Map();
-      const activeEditions: typeof EDITIONS = [];
+      // Fetch the latest snapshot for each event within the selected date range
+      const { data, error } = await supabase
+        .from('ticket_snapshots')
+        .select('event_id, event_name, tickets_sold, snapshot_date')
+        .gte('snapshot_date', fromStr)
+        .lt('snapshot_date', toStr)
+        .order('snapshot_date', { ascending: false });
 
-      for (const edition of EDITIONS) {
-        const yearOffset = edition.year - from.getFullYear();
-        const eqFrom = new Date(from.getFullYear() + yearOffset, from.getMonth(), from.getDate());
-        const eqTo = new Date(to.getFullYear() + yearOffset, to.getMonth(), to.getDate());
-
-        const fromStr = format(eqFrom, 'yyyy-MM-dd');
-        const toStr = format(addDays(eqTo, 1), 'yyyy-MM-dd'); // exclusive end
-
-        // Query snapshots for this edition's date range
-        // We get the last snapshot per event per day
-        const { data, error } = await supabase
-          .from('ticket_snapshots')
-          .select('event_name, tickets_sold, snapshot_date')
-          .gte('snapshot_date', fromStr)
-          .lt('snapshot_date', toStr)
-          .order('snapshot_date', { ascending: true });
-
-        if (error || !data || data.length === 0) continue;
-
-        // Filter to events belonging to this edition
-        const editionEvents = data.filter((row) => {
-          const ek = editionKeyFromEventName(row.event_name || '');
-          if (ek === edition.key) return true;
-          // For older editions without numbered names, match by checking if
-          // event name contains "Color Fest" and snapshot year matches
-          if (!ek && /color fest/i.test(row.event_name || '')) {
-            const snapYear = new Date(row.snapshot_date).getFullYear();
-            return snapYear === edition.year;
-          }
-          return false;
-        });
-
-        if (editionEvents.length === 0) continue;
-        activeEditions.push(edition);
-
-        // Group by snapshot day → sum tickets_sold (take max per event per day)
-        const eventDayMax = new Map<string, number>();
-        for (const row of editionEvents) {
-          const dayKey = row.snapshot_date.split('T')[0];
-          const eventKey = `${row.event_name}::${dayKey}`;
-          const prev = eventDayMax.get(eventKey) || 0;
-          eventDayMax.set(eventKey, Math.max(prev, row.tickets_sold));
-        }
-
-        // Sum per day
-        const dayTotals = new Map<string, number>();
-        for (const [key, sold] of eventDayMax) {
-          const dayKey = key.split('::')[1];
-          dayTotals.set(dayKey, (dayTotals.get(dayKey) || 0) + sold);
-        }
-
-        // Map back to reference dates (offset back)
-        const normalizedDayTotals = new Map<string, number>();
-        for (const [dayKey, total] of dayTotals) {
-          const d = new Date(dayKey + 'T12:00:00Z');
-          const refDate = new Date(d.getFullYear() - yearOffset, d.getUTCMonth(), d.getUTCDate());
-          const refKey = format(refDate, 'yyyy-MM-dd');
-          normalizedDayTotals.set(refKey, total);
-        }
-
-        results.set(edition.key, normalizedDayTotals);
+      if (error || !data) {
+        console.error(error);
+        setEditionTotals([]);
+        return;
       }
 
-      // Build comparison rows
-      const rows: ComparisonRow[] = [];
-      for (let i = 0; i < dayCount; i++) {
-        const d = addDays(from, i);
-        const key = format(d, 'yyyy-MM-dd');
-        const row: ComparisonRow = {
-          date: key,
-          label: format(d, 'd MMM', { locale: it }),
-        };
-        for (const edition of activeEditions) {
-          row[edition.key] = results.get(edition.key)?.get(key) || 0;
+      // Take the latest snapshot per event (most recent snapshot_date)
+      const latestPerEvent = new Map<string, { event_id: string; event_name: string; tickets_sold: number }>();
+      for (const row of data) {
+        const eid = row.event_id || row.event_name || '';
+        if (!latestPerEvent.has(eid)) {
+          latestPerEvent.set(eid, {
+            event_id: row.event_id || '',
+            event_name: row.event_name || '',
+            tickets_sold: row.tickets_sold,
+          });
         }
-        rows.push(row);
       }
 
-      setComparisonData(rows);
-      setEditionsFound(activeEditions);
+      // Group by edition
+      const editionMap = new Map<string, { total: number; events: { name: string; sold: number }[] }>();
+      for (const ev of latestPerEvent.values()) {
+        const edKey = classifyEvent(ev.event_name, ev.event_id);
+        if (!edKey) continue;
+        if (!editionMap.has(edKey)) editionMap.set(edKey, { total: 0, events: [] });
+        const entry = editionMap.get(edKey)!;
+        entry.total += ev.tickets_sold;
+        entry.events.push({ name: ev.event_name, sold: ev.tickets_sold });
+      }
+
+      // Build result aligned with EDITIONS
+      const results: EditionTotal[] = [];
+      for (const ed of EDITIONS) {
+        const found = editionMap.get(ed.key);
+        if (found && found.total > 0) {
+          found.events.sort((a, b) => b.sold - a.sold);
+          results.push({ key: ed.key, label: ed.label, color: ed.color, total: found.total, events: found.events });
+        }
+      }
+
+      setEditionTotals(results);
     } catch (err) {
       console.error('Error fetching comparison:', err);
     } finally {
@@ -166,11 +173,17 @@ const Monitoraggio = () => {
 
   const dateLabel = useMemo(() => {
     const { from, to } = selectedDates;
-    if (isSameDay(from, to)) {
-      return format(from, 'd MMMM yyyy', { locale: it });
-    }
+    if (isSameDay(from, to)) return format(from, 'd MMMM yyyy', { locale: it });
     return `${format(from, 'd MMM yyyy', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`;
   }, [selectedDates]);
+
+  const grandTotal = editionTotals.reduce((s, e) => s + e.total, 0);
+
+  // Highlight available snapshot dates in calendar
+  const highlightedDays = useMemo(
+    () => snapshotDates.map(d => new Date(d + 'T12:00:00')),
+    [snapshotDates],
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -203,7 +216,6 @@ const Monitoraggio = () => {
         {/* Date Controls */}
         <Card className="glass-card rounded-2xl">
           <CardContent className="p-4 space-y-4">
-            {/* Mode toggle */}
             <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-full">
               <TabsList className="w-full max-w-xs">
                 <TabsTrigger value="single" className="gap-2 flex-1">
@@ -228,10 +240,9 @@ const Monitoraggio = () => {
                     <Calendar
                       mode="single"
                       selected={singleDate}
-                      onSelect={(d) => {
-                        if (d) setSingleDate(d);
-                        setPopoverOpen(false);
-                      }}
+                      onSelect={(d) => { if (d) setSingleDate(d); setPopoverOpen(false); }}
+                      modifiers={{ hasData: highlightedDays }}
+                      modifiersStyles={{ hasData: { fontWeight: 700, textDecoration: 'underline' } }}
                       className="p-3 pointer-events-auto"
                       locale={it}
                     />
@@ -239,10 +250,9 @@ const Monitoraggio = () => {
                     <Calendar
                       mode="range"
                       selected={dateRange}
-                      onSelect={(r) => {
-                        setDateRange(r);
-                        if (r?.from && r?.to) setPopoverOpen(false);
-                      }}
+                      onSelect={(r) => { setDateRange(r); if (r?.from && r?.to) setPopoverOpen(false); }}
+                      modifiers={{ hasData: highlightedDays }}
+                      modifiersStyles={{ hasData: { fontWeight: 700, textDecoration: 'underline' } }}
                       numberOfMonths={2}
                       className="p-3 pointer-events-auto"
                       locale={it}
@@ -252,116 +262,199 @@ const Monitoraggio = () => {
               </Popover>
 
               <Button onClick={fetchComparison} disabled={loading} className="gap-2 font-semibold">
-                <BarChart3 className="w-4 h-4" />
+                <TrendingUp className="w-4 h-4" />
                 Confronta
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Seleziona una data o un periodo: verranno confrontati i biglietti venduti alla stessa data per ogni edizione del Color Fest.
+              Seleziona una data o periodo per confrontare i biglietti venduti per ogni edizione del Color Fest a quella data.
+              Le date con dati disponibili sono <strong>sottolineate</strong> nel calendario.
             </p>
           </CardContent>
         </Card>
 
-        {/* Results */}
+        {/* Loading */}
         {loading && (
           <div className="flex justify-center py-12">
-            <BarChart3 className="w-8 h-8 animate-spin text-primary" />
+            <TrendingUp className="w-8 h-8 animate-spin text-primary" />
           </div>
         )}
 
-        {!loading && editionsFound.length > 0 && comparisonData.length > 0 && (
+        {/* Results */}
+        {!loading && editionTotals.length > 0 && (
           <>
-            {/* Bar Chart */}
+            {/* Main comparison pie chart */}
             <Card className="glass-card rounded-2xl">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                  Confronto Biglietti Venduti
+                  <PieChartIcon className="w-5 h-5 text-primary" />
+                  Confronto Totale Biglietti per Edizione
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="w-full" style={{ height: Math.max(300, comparisonData.length * 50) }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={comparisonData} margin={{ top: 10, right: 20, bottom: 5, left: 0 }}>
-                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                        formatter={(value: number, name: string) => {
-                          const ed = editionsFound.find((e) => e.key === name);
-                          return [value.toLocaleString('it-IT'), ed?.label || name];
-                        }}
-                      />
-                      <Legend
-                        formatter={(value) => {
-                          const ed = editionsFound.find((e) => e.key === value);
-                          return ed?.label || value;
-                        }}
-                      />
-                      {editionsFound.map((edition) => (
-                        <Bar
-                          key={edition.key}
-                          dataKey={edition.key}
-                          fill={edition.color}
-                          radius={[4, 4, 0, 0]}
-                          barSize={28}
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <div className="w-full md:w-1/2" style={{ height: 280 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={editionTotals.map(e => ({ name: e.label, value: e.total }))}
+                          cx="50%" cy="50%"
+                          innerRadius={55} outerRadius={110}
+                          paddingAngle={3}
+                          dataKey="value"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={3}
+                        >
+                          {editionTotals.map((e, i) => (
+                            <Cell key={e.key} fill={e.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            background: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px', fontSize: '12px',
+                          }}
+                          formatter={(value: number) => [value.toLocaleString('it-IT'), 'Biglietti']}
                         />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Legend */}
+                  <div className="w-full md:w-1/2 space-y-3">
+                    {editionTotals.map((e) => {
+                      const pct = grandTotal > 0 ? ((e.total / grandTotal) * 100).toFixed(1) : '0';
+                      return (
+                        <div key={e.key} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/40">
+                          <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: e.color }} />
+                            <span className="font-semibold text-sm">{e.label}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-mono font-bold text-base">{e.total.toLocaleString('it-IT')}</span>
+                            <span className="text-xs text-muted-foreground ml-2">({pct}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                      <span className="font-bold text-sm">Totale</span>
+                      <span className="font-mono font-bold text-base">{grandTotal.toLocaleString('it-IT')}</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Summary Table */}
+            {/* Per-edition detail cards with mini pie */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {editionTotals.map((ed) => {
+                const topEvents = ed.events.slice(0, 8);
+                const othersTotal = ed.events.slice(8).reduce((s, e) => s + e.sold, 0);
+                const pieData = [
+                  ...topEvents.map(e => ({ name: e.name, value: e.sold })),
+                  ...(othersTotal > 0 ? [{ name: 'Altri', value: othersTotal }] : []),
+                ].filter(d => d.value > 0);
+
+                return (
+                  <Card key={ed.key} className="glass-card rounded-2xl overflow-hidden">
+                    <CardHeader className="pb-2" style={{ borderLeft: `4px solid ${ed.color}` }}>
+                      <CardTitle className="text-base font-bold flex items-center justify-between">
+                        <span>{ed.label}</span>
+                        <span className="font-mono text-lg" style={{ color: ed.color }}>
+                          {ed.total.toLocaleString('it-IT')}
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {pieData.length > 0 && (
+                        <div className="flex items-start gap-3">
+                          <div className="shrink-0" style={{ width: 120, height: 120 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%" cy="50%"
+                                  innerRadius={25} outerRadius={50}
+                                  paddingAngle={2}
+                                  dataKey="value"
+                                  stroke="hsl(var(--background))"
+                                  strokeWidth={2}
+                                >
+                                  {pieData.map((_, i) => (
+                                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  contentStyle={{
+                                    background: 'hsl(var(--card))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: '6px', fontSize: '11px',
+                                  }}
+                                  formatter={(v: number) => [v.toLocaleString('it-IT'), 'Venduti']}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="flex-1 space-y-1 min-w-0 max-h-[160px] overflow-y-auto pr-1">
+                            {pieData.map((item, i) => (
+                              <div key={i} className="flex items-center gap-2 text-xs">
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
+                                />
+                                <span className="truncate flex-1 text-muted-foreground">{item.name}</span>
+                                <span className="font-mono font-semibold shrink-0">{item.value.toLocaleString('it-IT')}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Comparison Table */}
             <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-lg font-bold">Riepilogo per Edizione</CardTitle>
+                <CardTitle className="text-lg font-bold">Riepilogo Dettagliato</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border">
-                        <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Data</th>
-                        {editionsFound.map((ed) => (
-                          <th key={ed.key} className="text-right py-2 px-3 font-semibold" style={{ color: ed.color }}>
-                            {ed.label}
-                          </th>
-                        ))}
+                        <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Edizione</th>
+                        <th className="text-right py-2 px-3 font-semibold text-muted-foreground">Biglietti</th>
+                        <th className="text-right py-2 px-3 font-semibold text-muted-foreground">% Totale</th>
+                        <th className="text-right py-2 px-3 font-semibold text-muted-foreground">N° Eventi</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {comparisonData.map((row) => (
-                        <tr key={row.date} className="border-b border-border/50 hover:bg-muted/30">
-                          <td className="py-2 px-3 font-medium">{row.label}</td>
-                          {editionsFound.map((ed) => (
-                            <td key={ed.key} className="text-right py-2 px-3 font-mono font-semibold">
-                              {((row[ed.key] as number) || 0).toLocaleString('it-IT')}
-                            </td>
-                          ))}
+                      {editionTotals.map((ed) => (
+                        <tr key={ed.key} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="py-2 px-3 font-semibold flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ed.color }} />
+                            {ed.label}
+                          </td>
+                          <td className="text-right py-2 px-3 font-mono font-bold">{ed.total.toLocaleString('it-IT')}</td>
+                          <td className="text-right py-2 px-3 font-mono">
+                            {grandTotal > 0 ? ((ed.total / grandTotal) * 100).toFixed(1) : 0}%
+                          </td>
+                          <td className="text-right py-2 px-3 font-mono">{ed.events.length}</td>
                         </tr>
                       ))}
-                      {/* Totals row */}
-                      {comparisonData.length > 1 && (
-                        <tr className="border-t-2 border-border font-bold">
-                          <td className="py-2 px-3">Totale</td>
-                          {editionsFound.map((ed) => {
-                            const total = comparisonData.reduce((s, r) => s + ((r[ed.key] as number) || 0), 0);
-                            return (
-                              <td key={ed.key} className="text-right py-2 px-3 font-mono" style={{ color: ed.color }}>
-                                {total.toLocaleString('it-IT')}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      )}
+                      <tr className="border-t-2 border-border font-bold">
+                        <td className="py-2 px-3">Totale</td>
+                        <td className="text-right py-2 px-3 font-mono">{grandTotal.toLocaleString('it-IT')}</td>
+                        <td className="text-right py-2 px-3 font-mono">100%</td>
+                        <td className="text-right py-2 px-3 font-mono">
+                          {editionTotals.reduce((s, e) => s + e.events.length, 0)}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -370,12 +463,13 @@ const Monitoraggio = () => {
           </>
         )}
 
-        {!loading && editionsFound.length === 0 && (
+        {!loading && editionTotals.length === 0 && (
           <Card className="glass-card rounded-2xl">
             <CardContent className="py-12 text-center">
-              <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <PieChartIcon className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground text-sm">
-                Nessun dato disponibile per il periodo selezionato. I dati di confronto si arricchiranno man mano che vengono raccolti snapshot giornalieri.
+                Nessun dato disponibile per il periodo selezionato.
+                Seleziona una data con dati (sottolineata nel calendario) e premi "Confronta".
               </p>
             </CardContent>
           </Card>
