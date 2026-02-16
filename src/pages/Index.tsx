@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
 import {
@@ -21,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import colorfestBg from '@/assets/colorfest-bg.webp';
 
 const Index = () => {
+  const navigate = useNavigate();
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
 
@@ -115,15 +117,25 @@ const Index = () => {
                 <p className="text-sm text-primary-foreground/70">Monitoraggio vendite in tempo reale</p>
               </div>
             </div>
-            <Button
-              onClick={fetchEvents}
-              disabled={loading}
-              variant="secondary"
-              size="sm"
-              className="gap-2 font-semibold shadow-lg">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Aggiorna
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => navigate('/monitoraggio')}
+                variant="secondary"
+                size="sm"
+                className="gap-2 font-semibold shadow-lg">
+                <TrendingUp className="w-4 h-4" />
+                Monitoraggio
+              </Button>
+              <Button
+                onClick={fetchEvents}
+                disabled={loading}
+                variant="secondary"
+                size="sm"
+                className="gap-2 font-semibold shadow-lg">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Aggiorna
+              </Button>
+            </div>
           </div>
 
           {/* Edition Selector inside header */}
