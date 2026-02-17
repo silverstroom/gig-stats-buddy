@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, TrendingUp } from 'lucide-react';
+
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
 import {
@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import colorfestBg from '@/assets/colorfest-bg.webp';
 
 const Index = () => {
-  const navigate = useNavigate();
+  
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
 
@@ -96,7 +96,7 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       {/* Hero Header */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 hero-gradient opacity-90" />
@@ -118,14 +118,6 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={() => navigate('/monitoraggio')}
-                variant="secondary"
-                size="sm"
-                className="gap-2 font-semibold shadow-lg">
-                <TrendingUp className="w-4 h-4" />
-                Monitoraggio
-              </Button>
               <Button
                 onClick={fetchEvents}
                 disabled={loading}
