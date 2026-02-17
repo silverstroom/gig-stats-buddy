@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { CalendarDays, CalendarRange, TrendingUp, TrendingDown, Minus, ArrowRightLeft } from 'lucide-react';
-import { format, addDays, isSameDay, subYears } from 'date-fns';
+import { format, addDays, isSameDay } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
@@ -85,64 +85,68 @@ const Monitoraggio = () => {
     setLoading(true);
     try {
       const { from, to } = selectedDates;
-      
-      // For each edition year, compute the equivalent period and query snapshots
-      const results: YearComparison[] = [];
+      const fromStr = format(from, 'yyyy-MM-dd');
+      const toStr = format(addDays(to, 1), 'yyyy-MM-dd');
 
-      for (const edition of EDITIONS) {
-        const yearDiff = 2026 - edition.year; // e.g., CF14=0, CF13=1, CF12=2
-        const eqFrom = subYears(from, yearDiff);
-        const eqTo = subYears(to, yearDiff);
-        const fromStr = format(eqFrom, 'yyyy-MM-dd');
-        const toStr = format(addDays(eqTo, 1), 'yyyy-MM-dd');
+      // Query ALL snapshots in the selected date range (all editions are stored together)
+      const { data, error } = await supabase
+        .from('ticket_snapshots')
+        .select('event_id, event_name, tickets_sold, snapshot_date')
+        .gte('snapshot_date', fromStr)
+        .lt('snapshot_date', toStr)
+        .order('snapshot_date', { ascending: false });
 
-        // Find snapshots in this period
-        const { data, error } = await supabase
-          .from('ticket_snapshots')
-          .select('event_id, event_name, tickets_sold, snapshot_date')
-          .gte('snapshot_date', fromStr)
-          .lt('snapshot_date', toStr)
-          .order('snapshot_date', { ascending: false });
-
-        if (error || !data || data.length === 0) {
-          // No data for this period, still show with 0
-          const periodLabel = isSameDay(eqFrom, eqTo)
-            ? format(eqFrom, 'd MMM yyyy', { locale: it })
-            : `${format(eqFrom, 'd MMM yyyy', { locale: it })} – ${format(eqTo, 'd MMM yyyy', { locale: it })}`;
-          results.push({ edition, periodLabel, total: 0, events: [] });
-          continue;
-        }
-
-        // Take latest snapshot per event_name (most recent date)
-        const latestPerEvent = new Map<string, { event_name: string; event_id: string; tickets_sold: number }>();
-        for (const row of data) {
-          const key = row.event_name || row.event_id || '';
-          if (!latestPerEvent.has(key)) {
-            latestPerEvent.set(key, {
-              event_name: row.event_name || '',
-              event_id: row.event_id || '',
-              tickets_sold: row.tickets_sold,
-            });
-          }
-        }
-
-        // Filter only events belonging to this edition
-        let total = 0;
-        const events: { name: string; sold: number }[] = [];
-        for (const ev of latestPerEvent.values()) {
-          const edKey = classifyEvent(ev.event_name, ev.event_id);
-          if (edKey !== edition.key) continue;
-          total += ev.tickets_sold;
-          events.push({ name: ev.event_name, sold: ev.tickets_sold });
-        }
-        events.sort((a, b) => b.sold - a.sold);
-
-        const periodLabel = isSameDay(eqFrom, eqTo)
-          ? format(eqFrom, 'd MMM yyyy', { locale: it })
-          : `${format(eqFrom, 'd MMM yyyy', { locale: it })} – ${format(eqTo, 'd MMM yyyy', { locale: it })}`;
-
-        results.push({ edition, periodLabel, total, events });
+      if (error || !data || data.length === 0) {
+        setComparisons(EDITIONS.map(ed => ({
+          edition: ed,
+          periodLabel: isSameDay(from, to)
+            ? format(from, 'd MMM yyyy', { locale: it })
+            : `${format(from, 'd MMM yyyy', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`,
+          total: 0,
+          events: [],
+        })));
+        setLoading(false);
+        return;
       }
+
+      // Take latest snapshot per event_name (most recent snapshot_date)
+      const latestPerEvent = new Map<string, { event_name: string; event_id: string; tickets_sold: number }>();
+      for (const row of data) {
+        const key = row.event_name || row.event_id || '';
+        if (!latestPerEvent.has(key)) {
+          latestPerEvent.set(key, {
+            event_name: row.event_name || '',
+            event_id: row.event_id || '',
+            tickets_sold: row.tickets_sold,
+          });
+        }
+      }
+
+      // Group by edition
+      const editionMap = new Map<string, { total: number; events: { name: string; sold: number }[] }>();
+      for (const ev of latestPerEvent.values()) {
+        const edKey = classifyEvent(ev.event_name, ev.event_id);
+        if (!edKey) continue;
+        if (!editionMap.has(edKey)) editionMap.set(edKey, { total: 0, events: [] });
+        const entry = editionMap.get(edKey)!;
+        entry.total += ev.tickets_sold;
+        entry.events.push({ name: ev.event_name, sold: ev.tickets_sold });
+      }
+
+      const periodLabel = isSameDay(from, to)
+        ? format(from, 'd MMM yyyy', { locale: it })
+        : `${format(from, 'd MMM yyyy', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`;
+
+      // Build results for all editions
+      const results: YearComparison[] = EDITIONS.map(ed => {
+        const found = editionMap.get(ed.key);
+        return {
+          edition: ed,
+          periodLabel,
+          total: found?.total || 0,
+          events: found?.events.sort((a, b) => b.sold - a.sold) || [],
+        };
+      });
 
       setComparisons(results);
     } catch (err) {
@@ -244,8 +248,8 @@ const Monitoraggio = () => {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Seleziona un periodo nel 2026. Il sistema confronta automaticamente lo stesso periodo negli anni precedenti 
-              (es. 1-15 gen 2026 vs 1-15 gen 2025 vs 1-15 gen 2024...).
+              Seleziona una data o periodo per confrontare i biglietti venduti per ogni edizione del Color Fest
+              alla data dello snapshot. Mostra quanti biglietti aveva venduto ciascuna edizione a quel punto.
             </p>
           </CardContent>
         </Card>
