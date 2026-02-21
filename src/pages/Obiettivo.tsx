@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
-import { groupEventsByEdition, getTotalTickets } from '@/lib/ticket-utils';
+import { groupEventsByEdition, getTotalTickets, calculateEditionAttendance } from '@/lib/ticket-utils';
+import { Users, Ticket } from 'lucide-react';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
 
 function getProgressColor(pct: number): string {
@@ -42,7 +43,14 @@ const Obiettivo = () => {
     return cf14Edition ? getTotalTickets(cf14Edition) : 0;
   }, [cf14Edition]);
 
-  const pct = Math.min((currentTickets / goal) * 100, 100);
+  const totalPresenze = useMemo(() => {
+    if (!cf14Edition) return 0;
+    const distribution = calculateEditionAttendance(cf14Edition);
+    return distribution.reduce((s, d) => s + d.count, 0);
+  }, [cf14Edition]);
+
+  // Use presenze totali for goal progress
+  const pct = Math.min((totalPresenze / goal) * 100, 100);
   const color = getProgressColor(pct);
 
   const chartData = [{ name: 'Progresso', value: pct, fill: color }];
@@ -159,17 +167,25 @@ const Obiettivo = () => {
 
                 <div className="mt-6 w-full max-w-sm space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
-                    <span className="text-sm font-medium text-muted-foreground">Biglietti venduti</span>
+                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Users className="w-4 h-4" /> Presenze totali
+                    </span>
+                    <span className="font-mono font-bold text-lg">{totalPresenze.toLocaleString('it-IT')}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
+                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Ticket className="w-4 h-4" /> Biglietti venduti
+                    </span>
                     <span className="font-mono font-bold text-lg">{currentTickets.toLocaleString('it-IT')}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
-                    <span className="text-sm font-medium text-muted-foreground">Obiettivo</span>
+                    <span className="text-sm font-medium text-muted-foreground">Obiettivo presenze</span>
                     <span className="font-mono font-bold text-lg">{goal.toLocaleString('it-IT')}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: `${color}15`, border: `1px solid ${color}30` }}>
                     <span className="text-sm font-medium" style={{ color }}>Mancanti</span>
                     <span className="font-mono font-bold text-lg" style={{ color }}>
-                      {Math.max(0, goal - currentTickets).toLocaleString('it-IT')}
+                      {Math.max(0, goal - totalPresenze).toLocaleString('it-IT')}
                     </span>
                   </div>
                 </div>
