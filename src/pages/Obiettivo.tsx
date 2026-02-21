@@ -1,18 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Target, Edit3, Check } from 'lucide-react';
+import { Target, Edit3, Check, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { useDiceEvents } from '@/hooks/useDiceEvents';
+import { groupEventsByEdition, getTotalTickets } from '@/lib/ticket-utils';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
 
 function getProgressColor(pct: number): string {
-  // Red (0%) → Yellow (50%) → Green (100%)
   if (pct <= 50) {
-    const h = (pct / 50) * 60; // 0 → 60
+    const h = (pct / 50) * 60;
     return `hsl(${h}, 85%, 50%)`;
   }
-  const h = 60 + ((pct - 50) / 50) * 60; // 60 → 120
+  const h = 60 + ((pct - 50) / 50) * 60;
   return `hsl(${h}, 75%, 42%)`;
 }
 
@@ -23,43 +23,24 @@ const Obiettivo = () => {
   });
   const [editing, setEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState(goal.toString());
-  const [currentTickets, setCurrentTickets] = useState(0);
-  const [loading, setLoading] = useState(true);
+
+  const { events, loading, fetchEvents } = useDiceEvents();
 
   useEffect(() => {
-    // Fetch latest CF14 tickets from snapshots
-    const fetchCurrent = async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from('ticket_snapshots')
-        .select('event_name, tickets_sold, snapshot_date')
-        .order('snapshot_date', { ascending: false })
-        .limit(200);
+    fetchEvents();
+  }, [fetchEvents]);
 
-      if (data) {
-        // Get latest snapshot date
-        const latestDate = data[0]?.snapshot_date;
-        if (!latestDate) { setLoading(false); return; }
-        const latestDateStr = latestDate.split('T')[0];
+  // Use the same grouping logic as the Home page
+  const editions = useMemo(() => groupEventsByEdition(events), [events]);
 
-        // Sum CF14 events from latest snapshot
-        let total = 0;
-        const seen = new Set<string>();
-        for (const row of data) {
-          if (row.snapshot_date.split('T')[0] !== latestDateStr) continue;
-          const name = row.event_name || '';
-          if (!/Color Fest\s*14/i.test(name)) continue;
-          const key = row.event_name;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          total += row.tickets_sold;
-        }
-        setCurrentTickets(total);
-      }
-      setLoading(false);
-    };
-    fetchCurrent();
-  }, []);
+  // Find CF14 (latest edition, or first one sorted by year desc)
+  const cf14Edition = useMemo(() => {
+    return editions.find(e => e.key === 'cf-14') || (editions.length > 0 ? editions[0] : null);
+  }, [editions]);
+
+  const currentTickets = useMemo(() => {
+    return cf14Edition ? getTotalTickets(cf14Edition) : 0;
+  }, [cf14Edition]);
 
   const pct = Math.min((currentTickets / goal) * 100, 100);
   const color = getProgressColor(pct);
@@ -77,20 +58,32 @@ const Obiettivo = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 hero-gradient opacity-90" />
         <div className="relative container mx-auto px-4 py-8 pb-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm">
-              <Target className="w-7 h-7 text-primary-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm">
+                <Target className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
+                  Obiettivo Vendite
+                </h1>
+                <p className="text-sm text-primary-foreground/70">
+                  {cf14Edition ? cf14Edition.label : 'Color Fest 14'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
-                Obiettivo Vendite
-              </h1>
-              <p className="text-sm text-primary-foreground/70">Color Fest 14</p>
-            </div>
+            <Button
+              onClick={fetchEvents}
+              disabled={loading}
+              variant="secondary"
+              size="sm"
+              className="gap-2 font-semibold shadow-lg"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
       </header>
@@ -156,7 +149,6 @@ const Obiettivo = () => {
                       />
                     </RadialBarChart>
                   </ResponsiveContainer>
-                  {/* Center text */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-4xl font-extrabold font-mono" style={{ color }}>
                       {pct.toFixed(1)}%
@@ -165,7 +157,6 @@ const Obiettivo = () => {
                   </div>
                 </div>
 
-                {/* Stats below */}
                 <div className="mt-6 w-full max-w-sm space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
                     <span className="text-sm font-medium text-muted-foreground">Biglietti venduti</span>
