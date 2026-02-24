@@ -11,6 +11,7 @@ import {
   getDailySalesBreakdown,
   getTodaySalesPerDay,
   getTodaySalesBreakdown,
+  getTodayPresenzeBreakdown,
   type FestivalEdition } from
 '@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
@@ -95,8 +96,15 @@ const Index = () => {
     [isLatestEdition, selectedEdition, snapshots]
   );
 
+  const todayPresenzeBreakdown = useMemo(
+    () => (isLatestEdition && selectedEdition)
+      ? getTodayPresenzeBreakdown(selectedEdition, snapshots.todayBaseline)
+      : [],
+    [isLatestEdition, selectedEdition, snapshots]
+  );
+
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-32">
       {/* Hero Header */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 hero-gradient opacity-90" />
@@ -185,7 +193,11 @@ const Index = () => {
                 subtitle="Somma presenze giornaliere"
                 icon={<Users className="w-5 h-5" />}
                 colorClass="text-secondary"
-                glowClass="stat-glow-gold" />
+                glowClass="stat-glow-gold"
+                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalSoldToday, soldYesterday: totalSoldYesterday } : null}
+                todayBreakdown={isLatestEdition ? todayPresenzeBreakdown : undefined}
+                todayLabel="Presenze oggi"
+              />
 
               {distribution.map((day, i) => (
                 <StatCard

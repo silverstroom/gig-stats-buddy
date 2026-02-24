@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      historical_daily_presenze: {
+        Row: {
+          created_at: string | null
+          edition_key: string
+          id: string
+          presenze_delta: number
+          sale_date: string
+          tickets_delta: number
+        }
+        Insert: {
+          created_at?: string | null
+          edition_key: string
+          id?: string
+          presenze_delta?: number
+          sale_date: string
+          tickets_delta?: number
+        }
+        Update: {
+          created_at?: string | null
+          edition_key?: string
+          id?: string
+          presenze_delta?: number
+          sale_date?: string
+          tickets_delta?: number
+        }
+        Relationships: []
+      }
       ticket_snapshots: {
         Row: {
           created_at: string
