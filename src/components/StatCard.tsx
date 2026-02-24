@@ -11,9 +11,10 @@ interface StatCardProps {
   glowClass?: string;
   todaySales?: { soldToday: number; soldYesterday: number } | null;
   todayBreakdown?: TodaySalesEventDetail[];
+  todayLabel?: string;
 }
 
-export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', glowClass = 'stat-glow', todaySales, todayBreakdown }: StatCardProps) {
+export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', glowClass = 'stat-glow', todaySales, todayBreakdown, todayLabel }: StatCardProps) {
   const pctChange = todaySales && todaySales.soldYesterday > 0
     ? Math.round(((todaySales.soldToday - todaySales.soldYesterday) / todaySales.soldYesterday) * 100)
     : null;
@@ -42,7 +43,7 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
         <div className="mt-3 pt-3 border-t border-border/50">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Venduti oggi
+              {todayLabel || 'Venduti oggi'}
             </p>
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-bold font-mono text-primary">

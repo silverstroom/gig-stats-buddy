@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Profilo = () => {
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-32">
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 hero-gradient opacity-90" />
         <div className="relative container mx-auto px-4 py-8 pb-10">

@@ -354,3 +354,29 @@ export function getDailySalesBreakdown(edition: FestivalEdition): DailySalesDeta
     };
   });
 }
+
+/**
+ * Get today's presenze breakdown per event.
+ * Each event's ticket delta is multiplied by the number of days it covers.
+ */
+export function getTodayPresenzeBreakdown(
+  edition: FestivalEdition,
+  todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+): TodaySalesEventDetail[] {
+  if (!todayBaseline) return [];
+
+  const todayMap = new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]));
+  const details: TodaySalesEventDetail[] = [];
+
+  for (const event of edition.events) {
+    const baselineSold = todayMap.get(event.id) ?? event.ticketsSold;
+    const diffToday = Math.max(0, event.ticketsSold - baselineSold);
+    if (diffToday > 0) {
+      const days = getEventDays(event, edition.key);
+      const presenze = diffToday * days.length;
+      details.push({ eventName: event.name, soldToday: presenze });
+    }
+  }
+
+  return details.sort((a, b) => b.soldToday - a.soldToday);
+}

@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { CalendarDays, CalendarRange, TrendingUp, TrendingDown, Minus, ArrowRightLeft } from 'lucide-react';
-import { format, addDays, isSameDay } from 'date-fns';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { CalendarDays, CalendarRange, TrendingUp, TrendingDown, Upload, ArrowRightLeft, RefreshCw } from 'lucide-react';
+import { format, addDays, addYears, isSameDay, eachDayOfInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { useDiceEvents } from '@/hooks/useDiceEvents';
+import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
 
-/* ── Edition definitions ── */
 const EDITIONS = [
   { key: 'CF14', label: 'CF 14', year: 2026, color: 'hsl(220, 100%, 55%)' },
   { key: 'CF13', label: 'CF 13', year: 2025, color: 'hsl(42, 100%, 50%)' },
@@ -19,161 +21,199 @@ const EDITIONS = [
   { key: 'CF10', label: 'CF 10', year: 2022, color: 'hsl(350, 80%, 55%)' },
 ];
 
-/* ── Event-ID → edition for unnumbered "Color Fest" events ── */
-const EVENT_ID_EDITION_MAP: Record<string, string> = {
-  'RXZlbnQ6MTEwMTkz': 'CF10', 'RXZlbnQ6MTExMDEz': 'CF10', 'RXZlbnQ6MTExMDE3': 'CF10',
-  'RXZlbnQ6MTExMDE4': 'CF10', 'RXZlbnQ6MTEyNTkz': 'CF10', 'RXZlbnQ6MTEzMDM5': 'CF10',
-  'RXZlbnQ6MTEzMDQw': 'CF10',
-  'RXZlbnQ6MTYzMDAw': 'CF11', 'RXZlbnQ6MTYzMzA5': 'CF11', 'RXZlbnQ6MTYzMzEx': 'CF11',
-  'RXZlbnQ6MTYzMzEz': 'CF11', 'RXZlbnQ6MTYzMzE0': 'CF11', 'RXZlbnQ6MTYzMzE1': 'CF11',
-  'RXZlbnQ6MTYzMzE2': 'CF11',
-};
-
-function classifyEvent(eventName: string, eventId: string | null): string | null {
-  const m = eventName.match(/Color Fest\s*(\d+)/i);
-  if (m) return `CF${m[1]}`;
-  if (/BECOLOR.*Color Fest\s*(\d+)/i.test(eventName)) {
-    const bm = eventName.match(/Color Fest\s*(\d+)/i);
-    if (bm) return `CF${bm[1]}`;
-  }
-  if (eventId && EVENT_ID_EDITION_MAP[eventId]) return EVENT_ID_EDITION_MAP[eventId];
-  if (/winter|pasquetta|factory/i.test(eventName)) return null;
-  return null;
-}
+const CURRENT_YEAR = 2026;
 
 type Mode = 'single' | 'range';
 
-interface YearComparison {
+interface EditionResult {
   edition: typeof EDITIONS[number];
-  periodLabel: string;
-  total: number;
-  events: { name: string; sold: number }[];
+  totalPresenze: number;
+  dailyData: { sale_date: string; presenze_delta: number }[];
+}
+
+function getPresenzeMultiplier(eventName: string): number {
+  if (/winter/i.test(eventName)) return /abbonamento/i.test(eventName) ? 2 : 1;
+  if (/pasquetta/i.test(eventName)) return 1;
+  if (/2\s*days?/i.test(eventName)) return 2;
+  if (/(abbonamento|full)/i.test(eventName) && !/1\s*day|one\s*day/i.test(eventName)) return 3;
+  return 1;
 }
 
 const Monitoraggio = () => {
   const [mode, setMode] = useState<Mode>('range');
   const [singleDate, setSingleDate] = useState<Date>(new Date());
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -6),
+    from: addDays(new Date(), -30),
     to: new Date(),
   });
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [comparisons, setComparisons] = useState<YearComparison[]>([]);
-  const [snapshotDates, setSnapshotDates] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [hasData, setHasData] = useState<boolean | null>(null);
+  const [editionResults, setEditionResults] = useState<EditionResult[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { events, fetchEvents } = useDiceEvents();
+
+  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+
+  // Check if historical data exists
+  useEffect(() => {
+    supabase.from('historical_daily_presenze').select('id', { count: 'exact', head: true })
+      .then(({ count }) => setHasData((count || 0) > 0));
+  }, []);
+
+  // CF14 live total presenze from DICE API
+  const cf14LiveTotal = useMemo(() => {
+    let total = 0;
+    for (const event of events) {
+      if (!/Color Fest\s*14/i.test(event.name)) continue;
+      total += event.ticketsSold * getPresenzeMultiplier(event.name);
+    }
+    return total;
+  }, [events]);
 
   const selectedDates = useMemo(() => {
     if (mode === 'single') return { from: singleDate, to: singleDate };
     return { from: dateRange?.from || new Date(), to: dateRange?.to || new Date() };
   }, [mode, singleDate, dateRange]);
 
-  useEffect(() => {
-    supabase
-      .from('ticket_snapshots')
-      .select('snapshot_date')
-      .order('snapshot_date', { ascending: false })
-      .limit(1000)
-      .then(({ data }) => {
-        if (data) {
-          const unique = [...new Set(data.map(r => r.snapshot_date.split('T')[0]))];
-          setSnapshotDates(unique);
-        }
-      });
+  // Import bundled CSV
+  const importBundled = useCallback(async () => {
+    setImporting(true);
+    try {
+      const resp = await fetch('/data/historical-transactions.csv');
+      const csvText = await resp.text();
+      const { data, error } = await supabase.functions.invoke('import-historical-csv', { body: { csvText } });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error);
+      toast.success(`Importati ${data.uniqueDays} giorni per ${data.editions?.join(', ')}`);
+      setHasData(true);
+    } catch (err: any) {
+      toast.error('Errore: ' + (err?.message || 'Sconosciuto'));
+    } finally {
+      setImporting(false);
+    }
   }, []);
 
+  // Import from file upload
+  const handleFileImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const csvText = await file.text();
+      const { data, error } = await supabase.functions.invoke('import-historical-csv', { body: { csvText } });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error);
+      toast.success(`Importati ${data.uniqueDays} giorni per ${data.editions?.join(', ')}`);
+      setHasData(true);
+    } catch (err: any) {
+      toast.error('Errore: ' + (err?.message || 'Sconosciuto'));
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, []);
+
+  // Fetch YoY comparison
   const fetchComparison = useCallback(async () => {
     setLoading(true);
     try {
       const { from, to } = selectedDates;
-      const fromStr = format(from, 'yyyy-MM-dd');
-      const toStr = format(addDays(to, 1), 'yyyy-MM-dd');
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-      // Query ALL snapshots in the selected date range (all editions are stored together)
-      const { data, error } = await supabase
-        .from('ticket_snapshots')
-        .select('event_id, event_name, tickets_sold, snapshot_date')
-        .gte('snapshot_date', fromStr)
-        .lt('snapshot_date', toStr)
-        .order('snapshot_date', { ascending: false });
+      const results = await Promise.all(
+        EDITIONS.map(async (ed) => {
+          const yearOffset = ed.year - CURRENT_YEAR;
+          const edFrom = format(addYears(from, yearOffset), 'yyyy-MM-dd');
+          const edTo = format(addYears(to, yearOffset), 'yyyy-MM-dd');
 
-      if (error || !data || data.length === 0) {
-        setComparisons(EDITIONS.map(ed => ({
-          edition: ed,
-          periodLabel: isSameDay(from, to)
-            ? format(from, 'd MMM yyyy', { locale: it })
-            : `${format(from, 'd MMM yyyy', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`,
-          total: 0,
-          events: [],
-        })));
-        setLoading(false);
-        return;
-      }
+          const { data } = await supabase
+            .from('historical_daily_presenze')
+            .select('sale_date, presenze_delta')
+            .eq('edition_key', ed.key)
+            .gte('sale_date', edFrom)
+            .lte('sale_date', edTo)
+            .order('sale_date');
 
-      // Take latest snapshot per event_name (most recent snapshot_date)
-      const latestPerEvent = new Map<string, { event_name: string; event_id: string; tickets_sold: number }>();
-      for (const row of data) {
-        const key = row.event_name || row.event_id || '';
-        if (!latestPerEvent.has(key)) {
-          latestPerEvent.set(key, {
-            event_name: row.event_name || '',
-            event_id: row.event_id || '',
-            tickets_sold: row.tickets_sold,
-          });
-        }
-      }
+          let totalPresenze = (data || []).reduce((s, d) => s + d.presenze_delta, 0);
 
-      // Group by edition
-      const editionMap = new Map<string, { total: number; events: { name: string; sold: number }[] }>();
-      for (const ev of latestPerEvent.values()) {
-        const edKey = classifyEvent(ev.event_name, ev.event_id);
-        if (!edKey) continue;
-        if (!editionMap.has(edKey)) editionMap.set(edKey, { total: 0, events: [] });
-        const entry = editionMap.get(edKey)!;
-        entry.total += ev.tickets_sold;
-        entry.events.push({ name: ev.event_name, sold: ev.tickets_sold });
-      }
+          // CF14: supplement with live DICE data if period includes today
+          if (ed.key === 'CF14' && cf14LiveTotal > 0 && edTo >= todayStr) {
+            const { data: beforeData } = await supabase
+              .from('historical_daily_presenze')
+              .select('presenze_delta')
+              .eq('edition_key', 'CF14')
+              .lt('sale_date', edFrom);
+            const cumBefore = (beforeData || []).reduce((s, d) => s + d.presenze_delta, 0);
+            const liveInPeriod = cf14LiveTotal - cumBefore;
+            if (liveInPeriod > totalPresenze) {
+              totalPresenze = liveInPeriod;
+            }
+          }
 
-      const periodLabel = isSameDay(from, to)
-        ? format(from, 'd MMM yyyy', { locale: it })
-        : `${format(from, 'd MMM yyyy', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`;
+          return { edition: ed, totalPresenze, dailyData: data || [] };
+        })
+      );
 
-      // Build results for all editions
-      const results: YearComparison[] = EDITIONS.map(ed => {
-        const found = editionMap.get(ed.key);
-        return {
-          edition: ed,
-          periodLabel,
-          total: found?.total || 0,
-          events: found?.events.sort((a, b) => b.sold - a.sold) || [],
-        };
-      });
-
-      setComparisons(results);
+      setEditionResults(results);
     } catch (err) {
-      console.error('Error fetching comparison:', err);
+      console.error(err);
+      toast.error('Errore nel confronto');
     } finally {
       setLoading(false);
     }
-  }, [selectedDates]);
+  }, [selectedDates, cf14LiveTotal]);
 
-  useEffect(() => { fetchComparison(); }, []);
+  // Auto-fetch when data becomes available
+  useEffect(() => {
+    if (hasData) fetchComparison();
+  }, [hasData]);
 
   const dateLabel = useMemo(() => {
     const { from, to } = selectedDates;
     if (isSameDay(from, to)) return format(from, 'd MMMM yyyy', { locale: it });
-    return `${format(from, 'd MMM yyyy', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`;
+    return `${format(from, 'd MMM', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`;
   }, [selectedDates]);
 
-  const highlightedDays = useMemo(
-    () => snapshotDates.map(d => new Date(d + 'T12:00:00')),
-    [snapshotDates],
-  );
+  const cf14Total = editionResults.find(r => r.edition.key === 'CF14')?.totalPresenze || 0;
 
-  // Reference is CF14 (index 0)
-  const cf14Total = comparisons.length > 0 ? comparisons[0].total : 0;
+  // Line chart data (cumulative within period)
+  const lineChartData = useMemo(() => {
+    if (!editionResults.length || isSameDay(selectedDates.from, selectedDates.to)) return [];
+
+    const days = eachDayOfInterval({ start: selectedDates.from, end: selectedDates.to });
+
+    return days.map((day) => {
+      const entry: Record<string, any> = { day: format(day, 'd MMM', { locale: it }) };
+
+      for (const result of editionResults) {
+        const yearOffset = result.edition.year - CURRENT_YEAR;
+        const targetDate = format(addYears(day, yearOffset), 'yyyy-MM-dd');
+
+        const cumulative = result.dailyData
+          .filter(d => d.sale_date <= targetDate)
+          .reduce((s, d) => s + d.presenze_delta, 0);
+
+        entry[result.edition.key] = cumulative;
+      }
+
+      return entry;
+    });
+  }, [editionResults, selectedDates]);
+
+  // Bar chart data
+  const barChartData = useMemo(() => {
+    return editionResults.map(r => ({
+      name: r.edition.label,
+      presenze: r.totalPresenze,
+      fill: r.edition.color,
+    }));
+  }, [editionResults]);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-32">
       {/* Header */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 hero-gradient opacity-90" />
@@ -186,152 +226,238 @@ const Monitoraggio = () => {
               <h1 className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
                 Monitoraggio
               </h1>
-              <p className="text-sm text-primary-foreground/70">Confronto vendite tra edizioni per periodo</p>
+              <p className="text-sm text-primary-foreground/70">Confronto presenze YoY tra edizioni</p>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-6 -mt-4">
+        {/* Import Section */}
+        {hasData === false && (
+          <Card className="glass-card rounded-2xl border-dashed border-2 border-primary/30">
+            <CardContent className="py-8 text-center space-y-4">
+              <Upload className="w-10 h-10 text-primary mx-auto" />
+              <h3 className="text-lg font-bold">Importa dati storici</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Importa il CSV delle transazioni DICE per visualizzare il confronto tra edizioni.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button onClick={importBundled} disabled={importing} className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  {importing ? 'Importazione...' : 'Importa dati inclusi'}
+                </Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  Carica CSV personalizzato
+                </Button>
+              </div>
+              <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Date Controls */}
-        <Card className="glass-card rounded-2xl">
-          <CardContent className="p-4 space-y-4">
-            <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-full">
-              <TabsList className="w-full max-w-xs">
-                <TabsTrigger value="single" className="gap-2 flex-1">
-                  <CalendarDays className="w-4 h-4" /> Giorno
-                </TabsTrigger>
-                <TabsTrigger value="range" className="gap-2 flex-1">
-                  <CalendarRange className="w-4 h-4" /> Periodo
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+        {hasData && (
+          <Card className="glass-card rounded-2xl">
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-auto">
+                  <TabsList>
+                    <TabsTrigger value="single" className="gap-2">
+                      <CalendarDays className="w-4 h-4" /> Giorno
+                    </TabsTrigger>
+                    <TabsTrigger value="range" className="gap-2">
+                      <CalendarRange className="w-4 h-4" /> Periodo
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-1 text-xs">
+                  <Upload className="w-3 h-3" />
+                  Aggiorna CSV
+                </Button>
+                <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
+              </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2 font-semibold min-w-[200px] justify-start">
-                    <CalendarDays className="w-4 h-4" />
-                    {dateLabel}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  {mode === 'single' ? (
-                    <Calendar
-                      mode="single"
-                      selected={singleDate}
-                      onSelect={(d) => { if (d) setSingleDate(d); setPopoverOpen(false); }}
-                      modifiers={{ hasData: highlightedDays }}
-                      modifiersStyles={{ hasData: { fontWeight: 700, textDecoration: 'underline' } }}
-                      className="p-3 pointer-events-auto"
-                      locale={it}
-                    />
-                  ) : (
-                    <Calendar
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={(r) => { setDateRange(r); if (r?.from && r?.to) setPopoverOpen(false); }}
-                      modifiers={{ hasData: highlightedDays }}
-                      modifiersStyles={{ hasData: { fontWeight: 700, textDecoration: 'underline' } }}
-                      numberOfMonths={2}
-                      className="p-3 pointer-events-auto"
-                      locale={it}
-                    />
-                  )}
-                </PopoverContent>
-              </Popover>
+              <div className="flex flex-wrap items-center gap-3">
+                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="gap-2 font-semibold min-w-[200px] justify-start">
+                      <CalendarDays className="w-4 h-4" />
+                      {dateLabel}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    {mode === 'single' ? (
+                      <Calendar
+                        mode="single"
+                        selected={singleDate}
+                        onSelect={(d) => { if (d) setSingleDate(d); setPopoverOpen(false); }}
+                        className="p-3 pointer-events-auto"
+                        locale={it}
+                      />
+                    ) : (
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={(r) => { setDateRange(r); if (r?.from && r?.to) setPopoverOpen(false); }}
+                        numberOfMonths={2}
+                        className="p-3 pointer-events-auto"
+                        locale={it}
+                      />
+                    )}
+                  </PopoverContent>
+                </Popover>
 
-              <Button onClick={fetchComparison} disabled={loading} className="gap-2 font-semibold">
-                <TrendingUp className="w-4 h-4" />
-                Confronta
-              </Button>
-            </div>
+                <Button onClick={fetchComparison} disabled={loading} className="gap-2 font-semibold">
+                  {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                  Confronta
+                </Button>
+              </div>
 
-            <p className="text-xs text-muted-foreground">
-              Seleziona una data o periodo per confrontare i biglietti venduti per ogni edizione del Color Fest
-              alla data dello snapshot. Mostra quanti biglietti aveva venduto ciascuna edizione a quel punto.
-            </p>
-          </CardContent>
-        </Card>
+              <p className="text-xs text-muted-foreground">
+                Confronta le presenze vendute nello stesso periodo per ogni edizione.
+                Presenze: Full = 3, 2 Days = 2, 1 Day = 1. CF14 usa dati live DICE.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Loading */}
         {loading && (
           <div className="flex justify-center py-12">
-            <TrendingUp className="w-8 h-8 animate-spin text-primary" />
+            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
           </div>
         )}
 
         {/* Results */}
-        {!loading && comparisons.length > 0 && (
-          <div className="space-y-4">
-            {comparisons.map((comp, idx) => {
-              const diff = idx > 0 && comp.total > 0 ? ((cf14Total - comp.total) / comp.total * 100) : null;
-              const isUp = diff !== null && diff > 0;
-              const isDown = diff !== null && diff < 0;
-              const isFlat = diff !== null && diff === 0;
+        {!loading && editionResults.length > 0 && (
+          <div className="space-y-6">
+            {/* Edition Cards */}
+            <div className="space-y-4">
+              {editionResults.map((result, idx) => {
+                const diff = idx > 0 && result.totalPresenze > 0
+                  ? ((cf14Total - result.totalPresenze) / result.totalPresenze * 100)
+                  : null;
+                const isUp = diff !== null && diff > 0;
+                const isDown = diff !== null && diff < 0;
 
-              return (
-                <Card key={comp.edition.key} className="glass-card rounded-2xl overflow-hidden">
-                  <div className="flex items-stretch">
-                    {/* Color bar */}
-                    <div className="w-1.5 shrink-0" style={{ backgroundColor: comp.edition.color }} />
-
-                    <div className="flex-1 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h3 className="text-base font-bold">{comp.edition.label}</h3>
-                          <p className="text-xs text-muted-foreground">{comp.periodLabel}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-extrabold font-mono" style={{ color: comp.edition.color }}>
-                            {comp.total.toLocaleString('it-IT')}
+                return (
+                  <Card key={result.edition.key} className="glass-card rounded-2xl overflow-hidden">
+                    <div className="flex items-stretch">
+                      <div className="w-1.5 shrink-0" style={{ backgroundColor: result.edition.color }} />
+                      <div className="flex-1 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h3 className="text-base font-bold">{result.edition.label}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {(() => {
+                                const yearOffset = result.edition.year - CURRENT_YEAR;
+                                const f = addYears(selectedDates.from, yearOffset);
+                                const t = addYears(selectedDates.to, yearOffset);
+                                if (isSameDay(f, t)) return format(f, 'd MMM yyyy', { locale: it });
+                                return `${format(f, 'd MMM yyyy', { locale: it })} – ${format(t, 'd MMM yyyy', { locale: it })}`;
+                              })()}
+                            </p>
                           </div>
-                          <span className="text-xs text-muted-foreground">biglietti</span>
-                        </div>
-                      </div>
-
-                      {/* Comparison badge vs CF14 */}
-                      {idx > 0 && comp.total > 0 && diff !== null && (
-                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
-                          isUp ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          isDown ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          {isUp && <TrendingUp className="w-3 h-3" />}
-                          {isDown && <TrendingDown className="w-3 h-3" />}
-                          {isFlat && <Minus className="w-3 h-3" />}
-                          CF14 {isUp ? '+' : ''}{diff.toFixed(1)}% vs {comp.edition.label}
-                        </div>
-                      )}
-
-                      {idx > 0 && comp.total === 0 && (
-                        <p className="text-xs text-muted-foreground italic">Nessun dato disponibile per questo periodo</p>
-                      )}
-
-                      {/* Event breakdown */}
-                      {comp.events.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          {comp.events.slice(0, 5).map((ev, i) => (
-                            <div key={i} className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground truncate flex-1 mr-2">{ev.name}</span>
-                              <span className="font-mono font-semibold shrink-0">{ev.sold.toLocaleString('it-IT')}</span>
+                          <div className="text-right">
+                            <div className="text-2xl font-extrabold font-mono" style={{ color: result.edition.color }}>
+                              {result.totalPresenze.toLocaleString('it-IT')}
                             </div>
-                          ))}
-                          {comp.events.length > 5 && (
-                            <p className="text-[10px] text-muted-foreground">+{comp.events.length - 5} altri eventi</p>
-                          )}
+                            <span className="text-xs text-muted-foreground">presenze</span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
 
-            {/* Summary */}
+                        {idx > 0 && diff !== null && result.totalPresenze > 0 && (
+                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
+                            isUp ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                            isDown ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            CF14 {isUp ? '+' : ''}{diff.toFixed(1)}% vs {result.edition.label}
+                          </div>
+                        )}
+
+                        {idx > 0 && result.totalPresenze === 0 && (
+                          <p className="text-xs text-muted-foreground italic">Nessun dato per questo periodo</p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Bar Chart */}
             <Card className="glass-card rounded-2xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold">Riepilogo Confronto</CardTitle>
+                <CardTitle className="text-sm font-bold">Confronto diretto presenze</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={barChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12 }}
+                      formatter={(value: number) => [value.toLocaleString('it-IT'), 'Presenze']}
+                    />
+                    <Bar dataKey="presenze" radius={[8, 8, 0, 0]}>
+                      {barChartData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Line Chart */}
+            {lineChartData.length > 1 && (
+              <Card className="glass-card rounded-2xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-bold">Andamento cumulativo nel periodo</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={lineChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12 }}
+                        formatter={(value: number, name: string) => {
+                          const ed = EDITIONS.find(e => e.key === name);
+                          return [value.toLocaleString('it-IT'), ed?.label || name];
+                        }}
+                      />
+                      <Legend formatter={(value) => {
+                        const ed = EDITIONS.find(e => e.key === value);
+                        return ed?.label || value;
+                      }} />
+                      {EDITIONS.map(ed => (
+                        <Line
+                          key={ed.key}
+                          type="monotone"
+                          dataKey={ed.key}
+                          stroke={ed.color}
+                          strokeWidth={ed.key === 'CF14' ? 3 : 1.5}
+                          dot={false}
+                          connectNulls
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Summary Table */}
+            <Card className="glass-card rounded-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-bold">Riepilogo</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -339,24 +465,24 @@ const Monitoraggio = () => {
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Edizione</th>
-                        <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Periodo</th>
-                        <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">Biglietti</th>
+                        <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">Presenze</th>
                         <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">vs CF14</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {comparisons.map((comp, idx) => {
-                        const diff = idx > 0 && comp.total > 0
-                          ? ((cf14Total - comp.total) / comp.total * 100)
+                      {editionResults.map((result, idx) => {
+                        const diff = idx > 0 && result.totalPresenze > 0
+                          ? ((cf14Total - result.totalPresenze) / result.totalPresenze * 100)
                           : null;
                         return (
-                          <tr key={comp.edition.key} className="border-b border-border/50">
+                          <tr key={result.edition.key} className="border-b border-border/50">
                             <td className="py-2 px-2 font-semibold flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: comp.edition.color }} />
-                              {comp.edition.label}
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: result.edition.color }} />
+                              {result.edition.label}
                             </td>
-                            <td className="py-2 px-2 text-xs text-muted-foreground">{comp.periodLabel}</td>
-                            <td className="text-right py-2 px-2 font-mono font-bold">{comp.total.toLocaleString('it-IT')}</td>
+                            <td className="text-right py-2 px-2 font-mono font-bold">
+                              {result.totalPresenze.toLocaleString('it-IT')}
+                            </td>
                             <td className="text-right py-2 px-2 font-mono text-xs">
                               {idx === 0 ? '—' : diff !== null ? (
                                 <span className={diff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
@@ -375,12 +501,12 @@ const Monitoraggio = () => {
           </div>
         )}
 
-        {!loading && comparisons.length === 0 && (
+        {!loading && editionResults.length === 0 && hasData && (
           <Card className="glass-card rounded-2xl">
             <CardContent className="py-12 text-center">
               <ArrowRightLeft className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground text-sm">
-                Seleziona un periodo e premi "Confronta" per vedere il confronto tra edizioni.
+                Seleziona un periodo e premi "Confronta".
               </p>
             </CardContent>
           </Card>

@@ -144,6 +144,6 @@
   }
 
   .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
   }
 }
