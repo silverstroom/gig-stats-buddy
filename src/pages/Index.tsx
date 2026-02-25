@@ -86,9 +86,6 @@ const Index = () => {
     return m;
   }, [todaySalesPerDay]);
 
-  const totalSoldToday = todaySalesPerDay.reduce((s, d) => s + d.soldToday, 0);
-  const totalSoldYesterday = todaySalesPerDay.reduce((s, d) => s + d.soldYesterday, 0);
-
   const todayBreakdown = useMemo(
     () => (isLatestEdition && selectedEdition)
       ? getTodaySalesBreakdown(selectedEdition, snapshots.todayBaseline)
@@ -102,6 +99,13 @@ const Index = () => {
       : [],
     [isLatestEdition, selectedEdition, snapshots]
   );
+
+  // Raw ticket deltas for "Biglietti Totali" card
+  const totalTicketsSoldToday = todayBreakdown.reduce((s, d) => s + d.soldToday, 0);
+  // Presenze deltas for "Presenze Totali" card
+  const totalPresenzeSoldToday = todayPresenzeBreakdown.reduce((s, d) => s + d.soldToday, 0);
+  // Yesterday comparison (raw tickets)
+  const totalSoldYesterday = todaySalesPerDay.reduce((s, d) => s + d.soldYesterday, 0);
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -183,7 +187,7 @@ const Index = () => {
                 subtitle="Biglietti venduti"
                 icon={<Ticket className="w-5 h-5" />}
                 colorClass="text-primary"
-                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalSoldToday, soldYesterday: totalSoldYesterday } : null}
+                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday } : null}
                 todayBreakdown={isLatestEdition ? todayBreakdown : undefined}
               />
 
@@ -194,7 +198,7 @@ const Index = () => {
                 icon={<Users className="w-5 h-5" />}
                 colorClass="text-secondary"
                 glowClass="stat-glow-gold"
-                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalSoldToday, soldYesterday: totalSoldYesterday } : null}
+                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalPresenzeSoldToday, soldYesterday: 0 } : null}
                 todayBreakdown={isLatestEdition ? todayPresenzeBreakdown : undefined}
                 todayLabel="Presenze oggi"
               />
