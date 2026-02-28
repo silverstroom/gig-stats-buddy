@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { DiceEventRaw } from '@/lib/ticket-utils';
 
@@ -21,15 +21,25 @@ export function useDiceEvents() {
     todayBaseline: null,
     yesterdayBaseline: null,
   });
+  const inFlightRef = useRef(false);
 
   const fetchEvents = useCallback(async () => {
+    if (inFlightRef.current) return;
+
+    inFlightRef.current = true;
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('dice-events', {
+      const invokePromise = supabase.functions.invoke('dice-events', {
         body: { action: 'fetch_events' },
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout nel caricamento dati live')), 15000)
+      );
+
+      const { data, error: fnError } = await Promise.race([invokePromise, timeoutPromise]) as any;
 
       if (fnError) throw new Error(fnError.message);
       if (!data?.success) throw new Error(data?.error || 'Failed to fetch events');
@@ -61,6 +71,7 @@ export function useDiceEvents() {
       console.error('Error fetching DICE events:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }, []);
