@@ -242,10 +242,10 @@ const Monitoraggio = () => {
     }
   }, [selectedDates, computeCF14SnapshotDeltas]);
 
-  // Auto-fetch when data becomes available
+  // Auto-fetch when data becomes available or dates/mode change
   useEffect(() => {
     if (hasData) fetchComparison();
-  }, [hasData]);
+  }, [hasData, fetchComparison]);
 
   const dateLabel = useMemo(() => {
     const { from, to } = selectedDates;
