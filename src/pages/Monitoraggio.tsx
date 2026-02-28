@@ -52,9 +52,9 @@ const Monitoraggio = () => {
   const [hasData, setHasData] = useState<boolean | null>(null);
   const [editionResults, setEditionResults] = useState<EditionResult[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const eventsRef = useRef<typeof events>([]);
 
   const { events, fetchEvents } = useDiceEvents();
+  const eventsRef = useRef<typeof events>([]);
   eventsRef.current = events;
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);

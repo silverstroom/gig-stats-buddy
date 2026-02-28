@@ -6,6 +6,29 @@ const corsHeaders = {
 };
 
 const DICE_GRAPHQL_URL = 'https://partners-endpoint.dice.fm/graphql';
+const DICE_REQUEST_TIMEOUT_MS = 15000;
+
+async function executeDiceQuery(query: string, apiKey: string) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort('timeout'), DICE_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(DICE_GRAPHQL_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+      signal: controller.signal,
+    });
+
+    const data = await response.json();
+    return { response, data };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 function getTodayISO(): string {
   // Use Italian timezone so "today" resets at midnight Rome time
@@ -28,8 +51,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    const body = await req.json();
-    const { action } = body;
+    let body: Record<string, any> = {};
+    try {
+      const rawBody = await req.text();
+      body = rawBody ? JSON.parse(rawBody) : {};
+    } catch (_parseError) {
+      console.warn('Invalid or empty JSON body, using default action fetch_events');
+    }
+
+    const action = typeof body.action === 'string' ? body.action : 'fetch_events';
 
     if (action === 'fetch_events') {
       const query = `{
@@ -59,16 +89,7 @@ Deno.serve(async (req) => {
         }
       }`;
 
-      const response = await fetch(DICE_GRAPHQL_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      const data = await response.json();
+      const { response, data } = await executeDiceQuery(query, apiKey);
 
       if (!response.ok) {
         console.error('DICE API error:', data);
@@ -154,6 +175,12 @@ Deno.serve(async (req) => {
 
     if (action === 'fetch_event_tickets') {
       const eventId = body.eventId;
+      if (!eventId || typeof eventId !== 'string') {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Missing or invalid eventId' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       const query = `{
         node(id: "${eventId}") {
@@ -173,16 +200,7 @@ Deno.serve(async (req) => {
         }
       }`;
 
-      const response = await fetch(DICE_GRAPHQL_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      const data = await response.json();
+      const { data } = await executeDiceQuery(query, apiKey);
 
       return new Response(
         JSON.stringify({ success: true, data }),
