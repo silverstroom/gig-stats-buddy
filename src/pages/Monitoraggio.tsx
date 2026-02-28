@@ -52,8 +52,10 @@ const Monitoraggio = () => {
   const [hasData, setHasData] = useState<boolean | null>(null);
   const [editionResults, setEditionResults] = useState<EditionResult[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const eventsRef = useRef<typeof events>([]);
 
   const { events, fetchEvents } = useDiceEvents();
+  eventsRef.current = events;
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
@@ -107,9 +109,8 @@ const Monitoraggio = () => {
     }
   }, []);
 
-  // Compute CF14 daily presenze deltas from ticket_snapshots for dates not in historical_daily_presenze
+  // Compute CF14 daily presenze deltas from ticket_snapshots
   const computeCF14SnapshotDeltas = useCallback(async (edFrom: string, edTo: string) => {
-    // Get all CF14 snapshots in range + one day before for delta computation
     const dayBefore = format(addDays(new Date(edFrom), -1), 'yyyy-MM-dd');
     
     const { data: snapshots } = await supabase
@@ -121,7 +122,6 @@ const Monitoraggio = () => {
 
     if (!snapshots || snapshots.length === 0) return [];
 
-    // Group by date
     const byDate = new Map<string, Map<string, number>>();
     for (const s of snapshots) {
       const d = s.snapshot_date.split('T')[0];
@@ -152,15 +152,15 @@ const Monitoraggio = () => {
       }
     }
 
-    // Also add today's live delta (current DICE totals vs latest snapshot)
+    // Add today's live delta using ref to avoid dep cycle
+    const currentEvents = eventsRef.current;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    if (todayStr >= edFrom && todayStr <= edTo && events.length > 0) {
+    if (todayStr >= edFrom && todayStr <= edTo && currentEvents.length > 0) {
       const latestSnapshotDate = sortedDates[sortedDates.length - 1];
       if (latestSnapshotDate && latestSnapshotDate < todayStr) {
-        // We have a snapshot but not for today yet - compute delta from latest snapshot
         const latestMap = byDate.get(latestSnapshotDate)!;
         let todayPresenze = 0;
-        for (const event of events) {
+        for (const event of currentEvents) {
           const prevSold = latestMap.get(event.name) || 0;
           const ticketDelta = Math.max(0, event.ticketsSold - prevSold);
           todayPresenze += ticketDelta * getPresenzeMultiplier(event.name);
@@ -169,15 +169,13 @@ const Monitoraggio = () => {
           deltas.push({ sale_date: todayStr, presenze_delta: todayPresenze });
         }
       } else if (latestSnapshotDate === todayStr) {
-        // Today's snapshot exists (baseline). Compute live delta from it.
         const todayMap = byDate.get(todayStr)!;
         let todayLiveDelta = 0;
-        for (const event of events) {
+        for (const event of currentEvents) {
           const baselineSold = todayMap.get(event.name) || 0;
           const ticketDelta = Math.max(0, event.ticketsSold - baselineSold);
           todayLiveDelta += ticketDelta * getPresenzeMultiplier(event.name);
         }
-        // Replace or add to today's delta
         const existingIdx = deltas.findIndex(d => d.sale_date === todayStr);
         if (existingIdx >= 0) {
           deltas[existingIdx].presenze_delta += todayLiveDelta;
@@ -188,7 +186,7 @@ const Monitoraggio = () => {
     }
 
     return deltas;
-  }, [events]);
+  }, []); // No deps - uses eventsRef
 
   // Fetch YoY comparison
   const fetchComparison = useCallback(async () => {
@@ -196,42 +194,51 @@ const Monitoraggio = () => {
     try {
       const { from, to } = selectedDates;
 
-      const results = await Promise.all(
-        EDITIONS.map(async (ed) => {
-          const yearOffset = ed.year - CURRENT_YEAR;
-          const edFrom = format(addYears(from, yearOffset), 'yyyy-MM-dd');
-          const edTo = format(addYears(to, yearOffset), 'yyyy-MM-dd');
+      // Single batch query for all historical data
+      const allEdFromTo = EDITIONS.map(ed => {
+        const yearOffset = ed.year - CURRENT_YEAR;
+        return {
+          key: ed.key,
+          from: format(addYears(from, yearOffset), 'yyyy-MM-dd'),
+          to: format(addYears(to, yearOffset), 'yyyy-MM-dd'),
+        };
+      });
 
-          // Get historical data
-          const { data: historicalData } = await supabase
-            .from('historical_daily_presenze')
-            .select('sale_date, presenze_delta')
-            .eq('edition_key', ed.key)
-            .gte('sale_date', edFrom)
-            .lte('sale_date', edTo)
-            .order('sale_date');
+      const globalFrom = allEdFromTo.reduce((min, e) => e.from < min ? e.from : min, allEdFromTo[0].from);
+      const globalTo = allEdFromTo.reduce((max, e) => e.to > max ? e.to : max, allEdFromTo[0].to);
 
-          let dailyData = historicalData || [];
+      const [{ data: allHistorical }, cf14Deltas] = await Promise.all([
+        supabase
+          .from('historical_daily_presenze')
+          .select('edition_key, sale_date, presenze_delta')
+          .gte('sale_date', globalFrom)
+          .lte('sale_date', globalTo)
+          .order('sale_date'),
+        computeCF14SnapshotDeltas(
+          allEdFromTo.find(e => e.key === 'CF14')!.from,
+          allEdFromTo.find(e => e.key === 'CF14')!.to
+        ),
+      ]);
 
-          // CF14: supplement with snapshot-derived deltas for dates not in historical data
-          if (ed.key === 'CF14') {
-            const historicalDates = new Set(dailyData.map(d => d.sale_date));
-            const snapshotDeltas = await computeCF14SnapshotDeltas(edFrom, edTo);
-            
-            // Merge: add snapshot deltas for dates not already in historical data
-            for (const sd of snapshotDeltas) {
-              if (!historicalDates.has(sd.sale_date)) {
-                dailyData.push(sd);
-              }
+      const results = EDITIONS.map((ed) => {
+        const edDates = allEdFromTo.find(e => e.key === ed.key)!;
+        let dailyData = (allHistorical || [])
+          .filter(d => d.edition_key === ed.key && d.sale_date >= edDates.from && d.sale_date <= edDates.to)
+          .map(d => ({ sale_date: d.sale_date, presenze_delta: d.presenze_delta }));
+
+        if (ed.key === 'CF14') {
+          const historicalDates = new Set(dailyData.map(d => d.sale_date));
+          for (const sd of cf14Deltas) {
+            if (!historicalDates.has(sd.sale_date)) {
+              dailyData.push(sd);
             }
-            dailyData.sort((a, b) => a.sale_date.localeCompare(b.sale_date));
           }
+          dailyData.sort((a, b) => a.sale_date.localeCompare(b.sale_date));
+        }
 
-          const totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
-
-          return { edition: ed, totalPresenze, dailyData };
-        })
-      );
+        const totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
+        return { edition: ed, totalPresenze, dailyData };
+      });
 
       setEditionResults(results);
     } catch (err) {
