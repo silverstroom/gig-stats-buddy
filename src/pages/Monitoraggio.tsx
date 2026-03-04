@@ -14,11 +14,11 @@ import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tool
 import { toast } from 'sonner';
 
 const EDITIONS = [
-  { key: 'CF14', label: 'CF 14', year: 2026, color: 'hsl(220, 100%, 55%)' },
-  { key: 'CF13', label: 'CF 13', year: 2025, color: 'hsl(42, 100%, 50%)' },
-  { key: 'CF12', label: 'CF 12', year: 2024, color: 'hsl(280, 80%, 55%)' },
-  { key: 'CF11', label: 'CF 11', year: 2023, color: 'hsl(160, 70%, 45%)' },
-  { key: 'CF10', label: 'CF 10', year: 2022, color: 'hsl(350, 80%, 55%)' },
+  { key: 'CF14', label: 'CF 14', year: 2026, color: 'hsl(220, 90%, 55%)' },
+  { key: 'CF13', label: 'CF 13', year: 2025, color: 'hsl(42, 95%, 55%)' },
+  { key: 'CF12', label: 'CF 12', year: 2024, color: 'hsl(280, 60%, 55%)' },
+  { key: 'CF11', label: 'CF 11', year: 2023, color: 'hsl(160, 60%, 45%)' },
+  { key: 'CF10', label: 'CF 10', year: 2022, color: 'hsl(350, 75%, 55%)' },
 ];
 
 const CURRENT_YEAR = 2026;
@@ -59,19 +59,16 @@ const Monitoraggio = () => {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  // Check if historical data exists
   useEffect(() => {
     supabase.from('historical_daily_presenze').select('id', { count: 'exact', head: true })
       .then(({ count }) => setHasData((count || 0) > 0));
   }, []);
-
 
   const selectedDates = useMemo(() => {
     if (mode === 'single') return { from: singleDate, to: singleDate };
     return { from: dateRange?.from || new Date(), to: dateRange?.to || new Date() };
   }, [mode, singleDate, dateRange]);
 
-  // Import bundled CSV
   const importBundled = useCallback(async () => {
     setImporting(true);
     try {
@@ -89,7 +86,6 @@ const Monitoraggio = () => {
     }
   }, []);
 
-  // Import from file upload
   const handleFileImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -109,7 +105,6 @@ const Monitoraggio = () => {
     }
   }, []);
 
-  // Compute CF14 daily presenze deltas from ticket_snapshots
   const computeCF14SnapshotDeltas = useCallback(async (edFrom: string, edTo: string) => {
     const dayBefore = format(addDays(new Date(edFrom), -1), 'yyyy-MM-dd');
     
@@ -152,7 +147,6 @@ const Monitoraggio = () => {
       }
     }
 
-    // Add today's live delta using ref to avoid dep cycle
     const currentEvents = eventsRef.current;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     if (todayStr >= edFrom && todayStr <= edTo && currentEvents.length > 0) {
@@ -186,15 +180,13 @@ const Monitoraggio = () => {
     }
 
     return deltas;
-  }, []); // No deps - uses eventsRef
+  }, []);
 
-  // Fetch YoY comparison
   const fetchComparison = useCallback(async () => {
     setLoading(true);
     try {
       const { from, to } = selectedDates;
 
-      // Single batch query for all historical data
       const allEdFromTo = EDITIONS.map(ed => {
         const yearOffset = ed.year - CURRENT_YEAR;
         return {
@@ -249,7 +241,6 @@ const Monitoraggio = () => {
     }
   }, [selectedDates, computeCF14SnapshotDeltas]);
 
-  // Auto-fetch when data becomes available or dates/mode change
   useEffect(() => {
     if (hasData) fetchComparison();
   }, [hasData, fetchComparison]);
@@ -262,7 +253,6 @@ const Monitoraggio = () => {
 
   const cf14Total = editionResults.find(r => r.edition.key === 'CF14')?.totalPresenze || 0;
 
-  // Line chart data (cumulative within period)
   const lineChartData = useMemo(() => {
     if (!editionResults.length || isSameDay(selectedDates.from, selectedDates.to)) return [];
 
@@ -286,7 +276,6 @@ const Monitoraggio = () => {
     });
   }, [editionResults, selectedDates]);
 
-  // Bar chart data
   const barChartData = useMemo(() => {
     return editionResults.map(r => ({
       name: r.edition.label,
@@ -295,115 +284,107 @@ const Monitoraggio = () => {
     }));
   }, [editionResults]);
 
+  const CARD_STYLES_MON = ['soft-card-blue', 'soft-card-yellow', 'soft-card-purple', 'soft-card-mint', 'soft-card-pink'];
+
   return (
     <div className="min-h-screen bg-background pb-32">
       {/* Header */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 hero-gradient opacity-90" />
-        <div className="relative container mx-auto px-4 py-8 pb-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm">
-              <ArrowRightLeft className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
-                Monitoraggio
-              </h1>
-              <p className="text-sm text-primary-foreground/70">Confronto presenze YoY tra edizioni</p>
-            </div>
+      <header className="px-5 pt-8 pb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-primary/10">
+            <ArrowRightLeft className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Monitoraggio</h1>
+            <p className="text-xs text-muted-foreground">Confronto presenze YoY</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-6 -mt-4">
+      <main className="px-5 space-y-4">
         {/* Import Section */}
         {hasData === false && (
-          <Card className="glass-card rounded-2xl border-dashed border-2 border-primary/30">
-            <CardContent className="py-8 text-center space-y-4">
-              <Upload className="w-10 h-10 text-primary mx-auto" />
-              <h3 className="text-lg font-bold">Importa dati storici</h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Importa il CSV delle transazioni DICE per visualizzare il confronto tra edizioni.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button onClick={importBundled} disabled={importing} className="gap-2">
-                  <Upload className="w-4 h-4" />
-                  {importing ? 'Importazione...' : 'Importa dati inclusi'}
-                </Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-2">
-                  <Upload className="w-4 h-4" />
-                  Carica CSV personalizzato
-                </Button>
-              </div>
-              <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
-            </CardContent>
-          </Card>
+          <div className="soft-card-orange p-6 text-center space-y-4">
+            <Upload className="w-10 h-10 text-primary mx-auto" />
+            <h3 className="text-base font-bold">Importa dati storici</h3>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              Importa il CSV delle transazioni DICE per il confronto tra edizioni.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button onClick={importBundled} disabled={importing} className="gap-2 rounded-2xl">
+                <Upload className="w-4 h-4" />
+                {importing ? 'Importazione...' : 'Importa dati inclusi'}
+              </Button>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-2 rounded-2xl">
+                <Upload className="w-4 h-4" />
+                Carica CSV
+              </Button>
+            </div>
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
+          </div>
         )}
 
         {/* Date Controls */}
         {hasData && (
-          <Card className="glass-card rounded-2xl">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-auto">
-                  <TabsList>
-                    <TabsTrigger value="single" className="gap-2">
-                      <CalendarDays className="w-4 h-4" /> Giorno
-                    </TabsTrigger>
-                    <TabsTrigger value="range" className="gap-2">
-                      <CalendarRange className="w-4 h-4" /> Periodo
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-1 text-xs">
-                  <Upload className="w-3 h-3" />
-                  Aggiorna CSV
-                </Button>
-                <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
-              </div>
+          <div className="soft-card p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-auto">
+                <TabsList className="rounded-2xl">
+                  <TabsTrigger value="single" className="gap-1.5 rounded-xl text-xs">
+                    <CalendarDays className="w-3.5 h-3.5" /> Giorno
+                  </TabsTrigger>
+                  <TabsTrigger value="range" className="gap-1.5 rounded-xl text-xs">
+                    <CalendarRange className="w-3.5 h-3.5" /> Periodo
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-1 text-[10px] rounded-xl">
+                <Upload className="w-3 h-3" />
+                CSV
+              </Button>
+              <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
+            </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="gap-2 font-semibold min-w-[200px] justify-start">
-                      <CalendarDays className="w-4 h-4" />
-                      {dateLabel}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    {mode === 'single' ? (
-                      <Calendar
-                        mode="single"
-                        selected={singleDate}
-                        onSelect={(d) => { if (d) setSingleDate(d); setPopoverOpen(false); }}
-                        className="p-3 pointer-events-auto"
-                        locale={it}
-                      />
-                    ) : (
-                      <Calendar
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={(r) => { setDateRange(r); if (r?.from && r?.to) setPopoverOpen(false); }}
-                        numberOfMonths={2}
-                        className="p-3 pointer-events-auto"
-                        locale={it}
-                      />
-                    )}
-                  </PopoverContent>
-                </Popover>
+            <div className="flex flex-wrap items-center gap-2">
+              <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2 font-semibold min-w-[180px] justify-start rounded-2xl text-sm h-10">
+                    <CalendarDays className="w-4 h-4" />
+                    {dateLabel}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
+                  {mode === 'single' ? (
+                    <Calendar
+                      mode="single"
+                      selected={singleDate}
+                      onSelect={(d) => { if (d) setSingleDate(d); setPopoverOpen(false); }}
+                      className="p-3 pointer-events-auto"
+                      locale={it}
+                    />
+                  ) : (
+                    <Calendar
+                      mode="range"
+                      selected={dateRange}
+                      onSelect={(r) => { setDateRange(r); if (r?.from && r?.to) setPopoverOpen(false); }}
+                      numberOfMonths={2}
+                      className="p-3 pointer-events-auto"
+                      locale={it}
+                    />
+                  )}
+                </PopoverContent>
+              </Popover>
 
-                <Button onClick={fetchComparison} disabled={loading} className="gap-2 font-semibold">
-                  {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-                  Confronta
-                </Button>
-              </div>
+              <Button onClick={fetchComparison} disabled={loading} className="gap-2 font-semibold rounded-2xl h-10">
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                Confronta
+              </Button>
+            </div>
 
-              <p className="text-xs text-muted-foreground">
-                Confronta le presenze vendute nello stesso periodo per ogni edizione.
-                Presenze: Full = 3, 2 Days = 2, 1 Day = 1. CF14 usa dati live DICE.
-              </p>
-            </CardContent>
-          </Card>
+            <p className="text-[10px] text-muted-foreground">
+              Full = 3 presenze, 2 Days = 2, 1 Day = 1. CF14 usa dati live.
+            </p>
+          </div>
         )}
 
         {/* Loading */}
@@ -415,9 +396,9 @@ const Monitoraggio = () => {
 
         {/* Results */}
         {!loading && editionResults.length > 0 && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Edition Cards */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {editionResults.map((result, idx) => {
                 const diff = idx > 0 && result.totalPresenze > 0
                   ? ((cf14Total - result.totalPresenze) / result.totalPresenze * 100)
@@ -426,173 +407,156 @@ const Monitoraggio = () => {
                 const isDown = diff !== null && diff < 0;
 
                 return (
-                  <Card key={result.edition.key} className="glass-card rounded-2xl overflow-hidden">
-                    <div className="flex items-stretch">
-                      <div className="w-1.5 shrink-0" style={{ backgroundColor: result.edition.color }} />
-                      <div className="flex-1 p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h3 className="text-base font-bold">{result.edition.label}</h3>
-                            <p className="text-xs text-muted-foreground">
-                              {(() => {
-                                const yearOffset = result.edition.year - CURRENT_YEAR;
-                                const f = addYears(selectedDates.from, yearOffset);
-                                const t = addYears(selectedDates.to, yearOffset);
-                                if (isSameDay(f, t)) return format(f, 'd MMM yyyy', { locale: it });
-                                return `${format(f, 'd MMM yyyy', { locale: it })} – ${format(t, 'd MMM yyyy', { locale: it })}`;
-                              })()}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-extrabold font-mono" style={{ color: result.edition.color }}>
-                              {result.totalPresenze.toLocaleString('it-IT')}
-                            </div>
-                            <span className="text-xs text-muted-foreground">presenze</span>
-                          </div>
+                  <div key={result.edition.key} className={`${CARD_STYLES_MON[idx % CARD_STYLES_MON.length]} p-4`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <h3 className="text-sm font-bold">{result.edition.label}</h3>
+                        <p className="text-[10px] text-muted-foreground">
+                          {(() => {
+                            const yearOffset = result.edition.year - CURRENT_YEAR;
+                            const f = addYears(selectedDates.from, yearOffset);
+                            const t = addYears(selectedDates.to, yearOffset);
+                            if (isSameDay(f, t)) return format(f, 'd MMM yyyy', { locale: it });
+                            return `${format(f, 'd MMM yyyy', { locale: it })} – ${format(t, 'd MMM yyyy', { locale: it })}`;
+                          })()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-extrabold font-mono" style={{ color: result.edition.color }}>
+                          {result.totalPresenze.toLocaleString('it-IT')}
                         </div>
-
-                        {idx > 0 && diff !== null && result.totalPresenze > 0 && (
-                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
-                            isUp ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            isDown ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            CF14 {isUp ? '+' : ''}{diff.toFixed(1)}% vs {result.edition.label}
-                          </div>
-                        )}
-
-                        {idx > 0 && result.totalPresenze === 0 && (
-                          <p className="text-xs text-muted-foreground italic">Nessun dato per questo periodo</p>
-                        )}
+                        <span className="text-[10px] text-muted-foreground">presenze</span>
                       </div>
                     </div>
-                  </Card>
+
+                    {idx > 0 && diff !== null && result.totalPresenze > 0 && (
+                      <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[10px] font-semibold ${
+                        isUp ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        isDown ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                        CF14 {isUp ? '+' : ''}{diff.toFixed(1)}% vs {result.edition.label}
+                      </div>
+                    )}
+
+                    {idx > 0 && result.totalPresenze === 0 && (
+                      <p className="text-[10px] text-muted-foreground italic">Nessun dato</p>
+                    )}
+                  </div>
                 );
               })}
             </div>
 
             {/* Bar Chart */}
-            <Card className="glass-card rounded-2xl">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold">Confronto diretto presenze</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={barChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12 }}
-                      formatter={(value: number) => [value.toLocaleString('it-IT'), 'Presenze']}
-                    />
-                    <Bar dataKey="presenze" radius={[8, 8, 0, 0]}>
-                      {barChartData.map((entry, i) => (
-                        <Cell key={i} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            <div className="soft-card p-4">
+              <h3 className="text-sm font-bold mb-3">Confronto diretto</h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={barChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 16 }}
+                    formatter={(value: number) => [value.toLocaleString('it-IT'), 'Presenze']}
+                  />
+                  <Bar dataKey="presenze" radius={[10, 10, 0, 0]}>
+                    {barChartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
             {/* Line Chart */}
             {lineChartData.length > 1 && (
-              <Card className="glass-card rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-bold">Andamento cumulativo nel periodo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={lineChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="day" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip
-                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12 }}
-                        formatter={(value: number, name: string) => {
-                          const ed = EDITIONS.find(e => e.key === name);
-                          return [value.toLocaleString('it-IT'), ed?.label || name];
-                        }}
+              <div className="soft-card p-4">
+                <h3 className="text-sm font-bold mb-3">Andamento cumulativo</h3>
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={lineChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="day" tick={{ fontSize: 9 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 16 }}
+                      formatter={(value: number, name: string) => {
+                        const ed = EDITIONS.find(e => e.key === name);
+                        return [value.toLocaleString('it-IT'), ed?.label || name];
+                      }}
+                    />
+                    <Legend formatter={(value) => {
+                      const ed = EDITIONS.find(e => e.key === value);
+                      return ed?.label || value;
+                    }} />
+                    {EDITIONS.map(ed => (
+                      <Line
+                        key={ed.key}
+                        type="monotone"
+                        dataKey={ed.key}
+                        stroke={ed.color}
+                        strokeWidth={ed.key === 'CF14' ? 3 : 1.5}
+                        dot={false}
+                        connectNulls
                       />
-                      <Legend formatter={(value) => {
-                        const ed = EDITIONS.find(e => e.key === value);
-                        return ed?.label || value;
-                      }} />
-                      {EDITIONS.map(ed => (
-                        <Line
-                          key={ed.key}
-                          type="monotone"
-                          dataKey={ed.key}
-                          stroke={ed.color}
-                          strokeWidth={ed.key === 'CF14' ? 3 : 1.5}
-                          dot={false}
-                          connectNulls
-                        />
-                      ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             )}
 
             {/* Summary Table */}
-            <Card className="glass-card rounded-2xl">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold">Riepilogo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Edizione</th>
-                        <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">Presenze</th>
-                        <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">vs CF14</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {editionResults.map((result, idx) => {
-                        const diff = idx > 0 && result.totalPresenze > 0
-                          ? ((cf14Total - result.totalPresenze) / result.totalPresenze * 100)
-                          : null;
-                        return (
-                          <tr key={result.edition.key} className="border-b border-border/50">
-                            <td className="py-2 px-2 font-semibold flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: result.edition.color }} />
-                              {result.edition.label}
-                            </td>
-                            <td className="text-right py-2 px-2 font-mono font-bold">
-                              {result.totalPresenze.toLocaleString('it-IT')}
-                            </td>
-                            <td className="text-right py-2 px-2 font-mono text-xs">
-                              {idx === 0 ? '—' : diff !== null ? (
-                                <span className={diff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                                  {diff >= 0 ? '+' : ''}{diff.toFixed(1)}%
-                                </span>
-                              ) : 'N/D'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="soft-card overflow-hidden">
+              <div className="p-4 border-b border-border/30">
+                <h3 className="text-sm font-bold">Riepilogo</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/30">
+                      <th className="text-left py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Edizione</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Presenze</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">vs CF14</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {editionResults.map((result, idx) => {
+                      const diff = idx > 0 && result.totalPresenze > 0
+                        ? ((cf14Total - result.totalPresenze) / result.totalPresenze * 100)
+                        : null;
+                      return (
+                        <tr key={result.edition.key} className="border-b border-border/20">
+                          <td className="py-2 px-3 font-semibold text-xs flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: result.edition.color }} />
+                            {result.edition.label}
+                          </td>
+                          <td className="text-right py-2 px-3 font-mono font-bold text-xs">
+                            {result.totalPresenze.toLocaleString('it-IT')}
+                          </td>
+                          <td className="text-right py-2 px-3 font-mono text-[10px]">
+                            {idx === 0 ? '—' : diff !== null ? (
+                              <span className={diff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                {diff >= 0 ? '+' : ''}{diff.toFixed(1)}%
+                              </span>
+                            ) : 'N/D'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
         {!loading && editionResults.length === 0 && hasData && (
-          <Card className="glass-card rounded-2xl">
-            <CardContent className="py-12 text-center">
-              <ArrowRightLeft className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">
-                Seleziona un periodo e premi "Confronta".
-              </p>
-            </CardContent>
-          </Card>
+          <div className="soft-card p-10 text-center">
+            <ArrowRightLeft className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">
+              Seleziona un periodo e premi "Confronta".
+            </p>
+          </div>
         )}
       </main>
     </div>

@@ -8,31 +8,41 @@ interface StatCardProps {
   subtitle?: string;
   icon?: ReactNode;
   colorClass?: string;
-  glowClass?: string;
+  cardStyle?: string;
   todaySales?: { soldToday: number; soldYesterday: number } | null;
   todayBreakdown?: TodaySalesEventDetail[];
   todayLabel?: string;
+  glowClass?: string;
 }
 
-export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', glowClass = 'stat-glow', todaySales, todayBreakdown, todayLabel }: StatCardProps) {
+const CARD_STYLES = [
+  'soft-card-blue',
+  'soft-card-yellow',
+  'soft-card-orange',
+  'soft-card-mint',
+  'soft-card-pink',
+  'soft-card-purple',
+];
+
+export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', cardStyle, todaySales, todayBreakdown, todayLabel, glowClass }: StatCardProps) {
   const pctChange = todaySales && todaySales.soldYesterday > 0
     ? Math.round(((todaySales.soldToday - todaySales.soldYesterday) / todaySales.soldYesterday) * 100)
     : null;
 
   return (
-    <div className={`glass-card ${glowClass} rounded-2xl p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl`}>
+    <div className={`${cardStyle || 'soft-card'} p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-md`}>
       <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</p>
-          <p className={`text-4xl font-extrabold font-mono tracking-tight ${colorClass}`}>
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
+          <p className={`text-3xl font-extrabold font-mono tracking-tight ${colorClass}`}>
             {typeof value === 'number' ? value.toLocaleString('it-IT') : value}
           </p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{subtitle}</p>
           )}
         </div>
         {icon && (
-          <div className={`p-2.5 rounded-xl bg-primary/10 ${colorClass}`}>
+          <div className={`p-2.5 rounded-2xl bg-foreground/5 ${colorClass}`}>
             {icon}
           </div>
         )}
@@ -40,7 +50,7 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
 
       {/* Today sales badge */}
       {todaySales !== null && todaySales !== undefined && (
-        <div className="mt-3 pt-3 border-t border-border/50">
+        <div className="mt-3 pt-3 border-t border-foreground/5">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               {todayLabel || 'Venduti oggi'}

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-
 import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
@@ -12,18 +11,18 @@ import {
   getTodaySalesPerDay,
   getTodaySalesBreakdown,
   getTodayPresenzeBreakdown,
-  type FestivalEdition } from
-'@/lib/ticket-utils';
+  type FestivalEdition,
+} from '@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
 import { TicketTypeTable } from '@/components/TicketTypeTable';
 import { DayDistributionTable } from '@/components/DayDistributionTable';
 import { DayBarChart } from '@/components/DayBarChart';
 import { DailySalesBreakdown } from '@/components/DailySalesBreakdown';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import colorfestBg from '@/assets/colorfest-bg.webp';
+
+const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', 'soft-card-mint', 'soft-card-pink'];
 
 const Index = () => {
-  
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
 
@@ -44,17 +43,17 @@ const Index = () => {
   const selectedEdition = editions.find((e) => e.key === selectedEditionKey);
 
   const distribution = useMemo(
-    () => selectedEdition ? calculateEditionAttendance(selectedEdition) : [],
+    () => (selectedEdition ? calculateEditionAttendance(selectedEdition) : []),
     [selectedEdition]
   );
 
   const ticketRows = useMemo(
-    () => selectedEdition ? getEditionTicketRows(selectedEdition) : [],
+    () => (selectedEdition ? getEditionTicketRows(selectedEdition) : []),
     [selectedEdition]
   );
 
   const totalTickets = useMemo(
-    () => selectedEdition ? getTotalTickets(selectedEdition) : 0,
+    () => (selectedEdition ? getTotalTickets(selectedEdition) : 0),
     [selectedEdition]
   );
 
@@ -66,18 +65,18 @@ const Index = () => {
   const isLatestEdition = editions.length > 0 && selectedEditionKey === editions[0].key;
 
   const dailySalesBreakdown = useMemo(
-    () => (isLatestEdition && selectedEdition) ? getDailySalesBreakdown(selectedEdition) : [],
+    () => (isLatestEdition && selectedEdition ? getDailySalesBreakdown(selectedEdition) : []),
     [isLatestEdition, selectedEdition]
   );
 
   const todaySalesPerDay = useMemo(
-    () => (isLatestEdition && selectedEdition)
-      ? getTodaySalesPerDay(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
-      : [],
+    () =>
+      isLatestEdition && selectedEdition
+        ? getTodaySalesPerDay(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
+        : [],
     [isLatestEdition, selectedEdition, snapshots]
   );
 
-  // Map date -> today sales for quick lookup
   const todaySalesMap = useMemo(() => {
     const m = new Map<string, { soldToday: number; soldYesterday: number }>();
     for (const d of todaySalesPerDay) {
@@ -87,85 +86,68 @@ const Index = () => {
   }, [todaySalesPerDay]);
 
   const todayBreakdown = useMemo(
-    () => (isLatestEdition && selectedEdition)
-      ? getTodaySalesBreakdown(selectedEdition, snapshots.todayBaseline)
-      : [],
+    () =>
+      isLatestEdition && selectedEdition
+        ? getTodaySalesBreakdown(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
+        : [],
     [isLatestEdition, selectedEdition, snapshots]
   );
 
   const todayPresenzeBreakdown = useMemo(
-    () => (isLatestEdition && selectedEdition)
-      ? getTodayPresenzeBreakdown(selectedEdition, snapshots.todayBaseline)
-      : [],
+    () =>
+      isLatestEdition && selectedEdition
+        ? getTodayPresenzeBreakdown(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
+        : [],
     [isLatestEdition, selectedEdition, snapshots]
   );
 
-  // Raw ticket deltas for "Biglietti Totali" card
   const totalTicketsSoldToday = todayBreakdown.reduce((s, d) => s + d.soldToday, 0);
-  // Presenze deltas for "Presenze Totali" card
   const totalPresenzeSoldToday = todayPresenzeBreakdown.reduce((s, d) => s + d.soldToday, 0);
-  // Yesterday comparison (raw tickets)
   const totalSoldYesterday = todaySalesPerDay.reduce((s, d) => s + d.soldYesterday, 0);
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      {/* Hero Header */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 hero-gradient opacity-90" />
-        <div
-          className="absolute inset-0 opacity-10 bg-cover bg-center mix-blend-overlay"
-          style={{ backgroundImage: `url(${colorfestBg})` }}
-        />
-        <div className="relative container mx-auto px-4 py-8 pb-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm">
-                <BarChart3 className="w-7 h-7 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
-                  Color Fest Analytics
-                </h1>
-                <p className="text-sm text-primary-foreground/70">Monitoraggio vendite in tempo reale</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={fetchEvents}
-                disabled={loading}
-                variant="secondary"
-                size="sm"
-                className="gap-2 font-semibold shadow-lg">
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                Aggiorna
-              </Button>
-            </div>
+      {/* Header */}
+      <header className="px-5 pt-8 pb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">Ciao 👋</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Color Fest</h1>
           </div>
-
-          {/* Edition Selector inside header */}
-          {editions.length > 0 && (
-            <div className="mt-6">
-              <Select value={selectedEditionKey || ''} onValueChange={setSelectedEditionKey}>
-                <SelectTrigger className="w-full max-w-md bg-primary-foreground/15 backdrop-blur-sm border-primary-foreground/20 text-primary-foreground font-semibold">
-                  <SelectValue placeholder="Seleziona un'edizione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {editions.map((edition) => (
-                    <SelectItem key={edition.key} value={edition.key}>
-                      {edition.label} ({edition.events.length} eventi)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <Button
+            onClick={fetchEvents}
+            disabled={loading}
+            variant="outline"
+            size="icon"
+            className="rounded-2xl h-10 w-10 shadow-sm"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
+
+        {/* Edition Selector */}
+        {editions.length > 0 && (
+          <div className="mt-4">
+            <Select value={selectedEditionKey || ''} onValueChange={setSelectedEditionKey}>
+              <SelectTrigger className="w-full rounded-2xl bg-card border-border/40 font-semibold shadow-sm h-12">
+                <SelectValue placeholder="Seleziona un'edizione..." />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl">
+                {editions.map((edition) => (
+                  <SelectItem key={edition.key} value={edition.key} className="rounded-xl">
+                    {edition.label} ({edition.events.length} eventi)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8 -mt-4">
+      <main className="px-5 space-y-5">
         {/* Error State */}
         {error && (
-          <div className="glass-card rounded-2xl p-4 border-destructive/50 bg-destructive/5">
+          <div className="soft-card-pink p-4">
             <p className="text-sm text-destructive font-medium">Errore: {error}</p>
           </div>
         )}
@@ -180,25 +162,34 @@ const Index = () => {
         {/* Stats */}
         {selectedEdition && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <StatCard
-                title="Biglietti Totali"
+                title="Biglietti"
                 value={totalTickets}
-                subtitle="Biglietti venduti"
+                subtitle="Totali venduti"
                 icon={<Ticket className="w-5 h-5" />}
                 colorClass="text-primary"
-                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday } : null}
+                cardStyle="soft-card-blue"
+                todaySales={
+                  isLatestEdition && snapshots.yesterdayBaseline
+                    ? { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday }
+                    : null
+                }
                 todayBreakdown={isLatestEdition ? todayBreakdown : undefined}
               />
 
               <StatCard
-                title="Presenze Totali"
+                title="Presenze"
                 value={totalPresenze}
-                subtitle="Somma presenze giornaliere"
+                subtitle="Somma giornaliere"
                 icon={<Users className="w-5 h-5" />}
                 colorClass="text-secondary"
-                glowClass="stat-glow-gold"
-                todaySales={isLatestEdition && snapshots.todayBaseline ? { soldToday: totalPresenzeSoldToday, soldYesterday: 0 } : null}
+                cardStyle="soft-card-yellow"
+                todaySales={
+                  isLatestEdition && snapshots.yesterdayBaseline
+                    ? { soldToday: totalPresenzeSoldToday, soldYesterday: 0 }
+                    : null
+                }
                 todayBreakdown={isLatestEdition ? todayPresenzeBreakdown : undefined}
                 todayLabel="Presenze oggi"
               />
@@ -211,7 +202,12 @@ const Index = () => {
                   subtitle={`Presenze ${day.day}`}
                   icon={<CalendarDays className="w-5 h-5" />}
                   colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
-                  todaySales={isLatestEdition && snapshots.todayBaseline ? todaySalesMap.get(day.date) || null : null}
+                  cardStyle={CARD_STYLES[(i + 2) % CARD_STYLES.length]}
+                  todaySales={
+                    isLatestEdition && snapshots.yesterdayBaseline
+                      ? todaySalesMap.get(day.date) || null
+                      : null
+                  }
                 />
               ))}
             </div>
@@ -220,7 +216,7 @@ const Index = () => {
             <DayBarChart distribution={distribution} />
 
             {/* Tables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-5">
               <TicketTypeTable rows={ticketRows} />
               <DayDistributionTable distribution={distribution} />
             </div>
@@ -232,11 +228,11 @@ const Index = () => {
         )}
 
         {!selectedEdition && !loading && events.length === 0 && (
-          <div className="text-center py-16 glass-card rounded-2xl">
+          <div className="text-center py-16 soft-card">
             <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nessun dato disponibile</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
-              Clicca "Aggiorna" per caricare i dati da DICE.
+              Clicca il pulsante di aggiornamento per caricare i dati.
             </p>
           </div>
         )}

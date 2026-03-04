@@ -6,100 +6,114 @@
 
 @layer base {
   :root {
-    --background: 45 30% 96%;
-    --foreground: 220 30% 12%;
+    --background: 40 30% 97%;
+    --foreground: 220 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 12%;
+    --card-foreground: 220 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 12%;
+    --popover-foreground: 220 25% 10%;
 
-    --primary: 220 100% 50%;
+    --primary: 220 90% 52%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 42 100% 50%;
-    --secondary-foreground: 220 30% 12%;
+    --secondary: 42 95% 55%;
+    --secondary-foreground: 220 25% 10%;
 
-    --muted: 220 15% 92%;
-    --muted-foreground: 220 12% 45%;
+    --muted: 40 20% 93%;
+    --muted-foreground: 220 10% 50%;
 
-    --accent: 42 100% 50%;
-    --accent-foreground: 220 30% 12%;
+    --accent: 42 95% 55%;
+    --accent-foreground: 220 25% 10%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 80% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 88%;
-    --input: 220 20% 88%;
-    --ring: 220 100% 50%;
+    --border: 40 15% 90%;
+    --input: 40 15% 90%;
+    --ring: 220 90% 52%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --chart-day1: 220 100% 50%;
-    --chart-day2: 42 100% 50%;
-    --chart-day3: 0 0% 75%;
-    --chart-day4: 200 80% 55%;
+    --card-orange: 30 100% 95%;
+    --card-blue: 220 100% 96%;
+    --card-mint: 160 60% 94%;
+    --card-pink: 340 80% 95%;
+    --card-yellow: 45 100% 92%;
+    --card-purple: 280 60% 95%;
+
+    --chart-day1: 220 90% 55%;
+    --chart-day2: 42 95% 55%;
+    --chart-day3: 280 60% 55%;
+    --chart-day4: 160 60% 45%;
     --chart-day5: 30 90% 55%;
     --chart-total: 220 20% 30%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 220 100% 50%;
+    --sidebar-primary: 220 90% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 42 100% 95%;
-    --sidebar-accent-foreground: 220 30% 12%;
-    --sidebar-border: 220 15% 90%;
-    --sidebar-ring: 220 100% 50%;
+    --sidebar-accent: 42 95% 95%;
+    --sidebar-accent-foreground: 220 25% 10%;
+    --sidebar-border: 40 15% 90%;
+    --sidebar-ring: 220 90% 52%;
 
     --font-display: 'Space Grotesk', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
 
   .dark {
-    --background: 222 30% 6%;
-    --foreground: 45 20% 95%;
+    --background: 222 25% 6%;
+    --foreground: 40 20% 95%;
 
-    --card: 222 28% 10%;
-    --card-foreground: 45 20% 95%;
+    --card: 222 22% 11%;
+    --card-foreground: 40 20% 95%;
 
-    --popover: 222 28% 10%;
-    --popover-foreground: 45 20% 95%;
+    --popover: 222 22% 11%;
+    --popover-foreground: 40 20% 95%;
 
-    --primary: 220 100% 55%;
+    --primary: 220 90% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 42 100% 50%;
+    --secondary: 42 95% 55%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 20% 15%;
-    --muted-foreground: 220 12% 55%;
+    --muted: 222 18% 16%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 42 100% 50%;
-    --accent-foreground: 220 30% 10%;
+    --accent: 42 95% 55%;
+    --accent-foreground: 220 25% 10%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 20% 16%;
-    --input: 222 20% 16%;
-    --ring: 220 100% 55%;
+    --border: 222 18% 18%;
+    --input: 222 18% 18%;
+    --ring: 220 90% 58%;
 
-    --chart-day1: 220 100% 60%;
-    --chart-day2: 42 100% 55%;
-    --chart-day3: 0 0% 70%;
-    --chart-day4: 200 80% 60%;
-    --chart-day5: 30 90% 60%;
+    --card-orange: 30 50% 15%;
+    --card-blue: 220 50% 15%;
+    --card-mint: 160 30% 13%;
+    --card-pink: 340 40% 15%;
+    --card-yellow: 45 50% 14%;
+    --card-purple: 280 30% 15%;
+
+    --chart-day1: 220 90% 60%;
+    --chart-day2: 42 95% 58%;
+    --chart-day3: 280 60% 60%;
+    --chart-day4: 160 60% 50%;
+    --chart-day5: 30 90% 58%;
     --chart-total: 220 15% 70%;
 
-    --sidebar-background: 222 30% 8%;
-    --sidebar-foreground: 45 20% 95%;
-    --sidebar-primary: 220 100% 55%;
+    --sidebar-background: 222 25% 8%;
+    --sidebar-foreground: 40 20% 95%;
+    --sidebar-primary: 220 90% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 20% 14%;
-    --sidebar-accent-foreground: 45 20% 95%;
-    --sidebar-border: 222 20% 14%;
-    --sidebar-ring: 220 100% 55%;
+    --sidebar-accent: 222 18% 14%;
+    --sidebar-accent-foreground: 40 20% 95%;
+    --sidebar-border: 222 18% 14%;
+    --sidebar-ring: 220 90% 58%;
   }
 }
 
@@ -120,27 +134,61 @@
   }
 
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(220, 100%, 50%), hsl(220, 100%, 65%));
+    background: linear-gradient(135deg, hsl(220, 90%, 52%), hsl(220, 90%, 65%));
   }
 
   .gradient-gold {
-    background: linear-gradient(135deg, hsl(42, 100%, 50%), hsl(35, 100%, 55%));
+    background: linear-gradient(135deg, hsl(42, 95%, 55%), hsl(35, 100%, 60%));
+  }
+
+  .soft-card {
+    @apply bg-card rounded-3xl border border-border/40 shadow-sm;
+  }
+
+  .soft-card-orange {
+    background: hsl(var(--card-orange));
+    @apply rounded-3xl border-0 shadow-sm;
+  }
+
+  .soft-card-blue {
+    background: hsl(var(--card-blue));
+    @apply rounded-3xl border-0 shadow-sm;
+  }
+
+  .soft-card-mint {
+    background: hsl(var(--card-mint));
+    @apply rounded-3xl border-0 shadow-sm;
+  }
+
+  .soft-card-pink {
+    background: hsl(var(--card-pink));
+    @apply rounded-3xl border-0 shadow-sm;
+  }
+
+  .soft-card-yellow {
+    background: hsl(var(--card-yellow));
+    @apply rounded-3xl border-0 shadow-sm;
+  }
+
+  .soft-card-purple {
+    background: hsl(var(--card-purple));
+    @apply rounded-3xl border-0 shadow-sm;
   }
 
   .glass-card {
-    @apply bg-card/90 backdrop-blur-xl border border-border/50 shadow-lg;
+    @apply bg-card/90 backdrop-blur-xl border border-border/50 shadow-sm rounded-3xl;
   }
 
   .stat-glow {
-    box-shadow: 0 0 40px -8px hsl(var(--primary) / 0.2);
+    box-shadow: 0 4px 20px -4px hsl(var(--primary) / 0.12);
   }
 
   .stat-glow-gold {
-    box-shadow: 0 0 40px -8px hsl(var(--secondary) / 0.25);
+    box-shadow: 0 4px 20px -4px hsl(var(--secondary) / 0.15);
   }
 
   .hero-gradient {
-    background: linear-gradient(135deg, hsl(220, 100%, 50%) 0%, hsl(220, 100%, 40%) 50%, hsl(42, 100%, 50%) 100%);
+    background: linear-gradient(135deg, hsl(220, 90%, 52%) 0%, hsl(220, 80%, 42%) 50%, hsl(42, 95%, 55%) 100%);
   }
 
   .safe-area-bottom {

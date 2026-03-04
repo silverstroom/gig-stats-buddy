@@ -1,61 +1,51 @@
 import { User, Settings, Info } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Profilo = () => {
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 hero-gradient opacity-90" />
-        <div className="relative container mx-auto px-4 py-8 pb-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm">
-              <User className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
-                Profilo
-              </h1>
-              <p className="text-sm text-primary-foreground/70">Impostazioni e informazioni</p>
-            </div>
+      <header className="px-5 pt-8 pb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-primary/10">
+            <User className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Profilo</h1>
+            <p className="text-xs text-muted-foreground">Impostazioni e info</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-4 -mt-4">
-        <Card className="glass-card rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Info className="w-4 h-4 text-primary" /> Informazioni App
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
+      <main className="px-5 space-y-4">
+        <div className="soft-card-blue p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Info className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-bold">Info App</h3>
+          </div>
+          <div className="space-y-2.5">
+            <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">App</span>
               <span className="font-semibold">Color Fest Analytics</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Versione</span>
               <span className="font-mono">1.0.0</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Dati da</span>
               <span className="font-semibold">DICE</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="glass-card rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Settings className="w-4 h-4 text-primary" /> Impostazioni
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Le impostazioni saranno disponibili in una futura versione.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="soft-card p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Settings className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-bold">Impostazioni</h3>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Le impostazioni saranno disponibili in una futura versione.
+          </p>
+        </div>
       </main>
     </div>
   );

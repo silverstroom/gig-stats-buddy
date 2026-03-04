@@ -43,9 +43,6 @@ const EDITION_DAYS: Record<string, string[]> = {
   'cf-summer-2022': ['2022-08-11', '2022-08-12', '2022-08-13'],
 };
 
-/**
- * Group raw DICE events into festival editions.
- */
 export function groupEventsByEdition(events: DiceEventRaw[]): FestivalEdition[] {
   const editionMap = new Map<string, FestivalEdition>();
 
@@ -58,7 +55,6 @@ export function groupEventsByEdition(events: DiceEventRaw[]): FestivalEdition[] 
     editionMap.get(key)!.events.push(event);
   }
 
-  // Sort editions by year descending, then by label
   return Array.from(editionMap.values()).sort((a, b) => {
     if (b.year !== a.year) return b.year - a.year;
     return a.label.localeCompare(b.label);
@@ -91,16 +87,11 @@ function detectEdition(event: DiceEventRaw): { key: string; label: string; year:
   return { key: `other-${startYear}`, label: `Altri Eventi ${startYear}`, year: startYear };
 }
 
-/**
- * Get the official festival days for an edition.
- * Uses the hardcoded EDITION_DAYS map; falls back to extracting from events.
- */
 export function getEditionDays(edition: FestivalEdition): string[] {
   if (EDITION_DAYS[edition.key]) {
     return EDITION_DAYS[edition.key];
   }
 
-  // Fallback for editions not in the map (Pasquetta, Winter, etc.)
   const daysSet = new Set<string>();
   for (const event of edition.events) {
     for (const d of getEventDaysByDatetime(event)) {
@@ -110,12 +101,6 @@ export function getEditionDays(edition: FestivalEdition): string[] {
   return Array.from(daysSet).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 }
 
-/**
- * Get which official edition days a specific event covers.
- * Parses the event name for day numbers (e.g. "11 Agosto", "11 - 13 Agosto")
- * and maps them to the edition's official days.
- * "Full"/"Abbonamento" events without specific days cover ALL edition days.
- */
 function getEventDays(event: DiceEventRaw, editionKey?: string): string[] {
   const officialDays = editionKey && EDITION_DAYS[editionKey] ? EDITION_DAYS[editionKey] : null;
 
@@ -124,8 +109,6 @@ function getEventDays(event: DiceEventRaw, editionKey?: string): string[] {
   }
 
   const name = event.name;
-
-  // Extract day numbers from event name (before "Agosto" or similar month)
   const monthPattern = /(?:Agosto|agosto)/i;
   const monthMatch = name.match(monthPattern);
 
@@ -134,7 +117,6 @@ function getEventDays(event: DiceEventRaw, editionKey?: string): string[] {
     const dayNumbers = beforeMonth.match(/\d{1,2}/g);
     if (dayNumbers && dayNumbers.length > 0) {
       const days = dayNumbers.map(d => parseInt(d));
-      // Filter official days to only those whose date matches the extracted day numbers
       return officialDays.filter(isoDate => {
         const dateDay = new Date(isoDate + 'T12:00:00Z').getUTCDate();
         return days.includes(dateDay);
@@ -142,7 +124,6 @@ function getEventDays(event: DiceEventRaw, editionKey?: string): string[] {
     }
   }
 
-  // Also check ticket type names for day info
   for (const tt of event.ticketTypes) {
     const ttMatch = tt.name.match(monthPattern);
     if (ttMatch) {
@@ -158,13 +139,9 @@ function getEventDays(event: DiceEventRaw, editionKey?: string): string[] {
     }
   }
 
-  // "Full", "Abbonamento", "Early Bird" without specific days → all edition days
   return officialDays;
 }
 
-/**
- * Fallback: get event days from the startDatetime/endDatetime range.
- */
 function getEventDaysByDatetime(event: DiceEventRaw): string[] {
   const start = new Date(event.startDatetime);
   const end = new Date(event.endDatetime);
@@ -189,9 +166,6 @@ function getEventDaysByDatetime(event: DiceEventRaw): string[] {
   return days;
 }
 
-/**
- * Format an ISO date string to a readable Italian day label.
- */
 export function formatDayLabel(isoDate: string): string {
   const date = new Date(isoDate + 'T12:00:00Z');
   const day = date.getUTCDate();
@@ -199,10 +173,6 @@ export function formatDayLabel(isoDate: string): string {
   return `${day} ${months[date.getUTCMonth()]}`;
 }
 
-/**
- * Calculate daily attendance for an edition.
- * Each event's ticketsSold count is added to each day that event covers.
- */
 export function calculateEditionAttendance(edition: FestivalEdition): DayDistribution[] {
   const days = getEditionDays(edition);
   const dayMap: Record<string, number> = {};
@@ -224,9 +194,6 @@ export function calculateEditionAttendance(edition: FestivalEdition): DayDistrib
   }));
 }
 
-/**
- * Get ticket rows for the edition table: each DICE event becomes a row.
- */
 export function getEditionTicketRows(edition: FestivalEdition): EditionTicketRow[] {
   return edition.events
     .map((event) => ({
@@ -254,6 +221,8 @@ export interface TodaySalesEventDetail {
 
 /**
  * Compute how many tickets were sold today for each festival day.
+ * FIX: Uses yesterdayBaseline as reference to capture ALL tickets sold since yesterday,
+ * including those sold between midnight and the first app open.
  */
 export function getTodaySalesPerDay(
   edition: FestivalEdition,
@@ -261,30 +230,28 @@ export function getTodaySalesPerDay(
   yesterdayBaseline: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesPerDay[] {
   const days = getEditionDays(edition);
-  if (!todayBaseline) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
+  if (!yesterdayBaseline && !todayBaseline) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
 
-  const todayMap = new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]));
-  const yesterdayMap = yesterdayBaseline ? new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold])) : null;
+  // Use yesterday as reference for today's delta (captures all sales since yesterday)
+  const referenceMap = yesterdayBaseline
+    ? new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold]))
+    : todayBaseline
+    ? new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]))
+    : new Map<string, number>();
 
   const soldTodayPerDay: Record<string, number> = {};
-  const soldYesterdayPerDay: Record<string, number> = {};
   for (const d of days) {
     soldTodayPerDay[d] = 0;
-    soldYesterdayPerDay[d] = 0;
   }
 
   for (const event of edition.events) {
     const eventDays = getEventDays(event, edition.key);
-    const baselineSold = todayMap.get(event.id) ?? event.ticketsSold;
-    const diffToday = event.ticketsSold - baselineSold;
-
-    const ydSold = yesterdayMap ? (yesterdayMap.get(event.id) ?? 0) : 0;
-    const diffYesterday = baselineSold - ydSold;
+    const refSold = referenceMap.get(event.id) ?? event.ticketsSold;
+    const diffToday = Math.max(0, event.ticketsSold - refSold);
 
     for (const d of eventDays) {
       if (d in soldTodayPerDay) {
-        soldTodayPerDay[d] += Math.max(0, diffToday);
-        soldYesterdayPerDay[d] += Math.max(0, diffYesterday);
+        soldTodayPerDay[d] += diffToday;
       }
     }
   }
@@ -292,26 +259,29 @@ export function getTodaySalesPerDay(
   return days.map(d => ({
     date: d,
     soldToday: soldTodayPerDay[d],
-    soldYesterday: soldYesterdayPerDay[d],
+    soldYesterday: 0,
   }));
 }
 
 /**
- * Get per-event breakdown of today's sales (total across all days).
- * Only returns events that had > 0 sales today.
+ * Get per-event breakdown of today's sales.
+ * FIX: Uses yesterdayBaseline as primary reference to capture ALL daily sales.
  */
 export function getTodaySalesBreakdown(
   edition: FestivalEdition,
   todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+  yesterdayBaseline?: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesEventDetail[] {
-  if (!todayBaseline) return [];
+  // Prefer yesterday's baseline to capture full day's sales
+  const reference = yesterdayBaseline || todayBaseline;
+  if (!reference) return [];
 
-  const todayMap = new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]));
+  const refMap = new Map(reference.map(s => [s.event_id, s.tickets_sold]));
   const details: TodaySalesEventDetail[] = [];
 
   for (const event of edition.events) {
-    const baselineSold = todayMap.get(event.id) ?? event.ticketsSold;
-    const diffToday = Math.max(0, event.ticketsSold - baselineSold);
+    const refSold = refMap.get(event.id) ?? event.ticketsSold;
+    const diffToday = Math.max(0, event.ticketsSold - refSold);
     if (diffToday > 0) {
       details.push({ eventName: event.name, soldToday: diffToday });
     }
@@ -327,9 +297,6 @@ export interface DailySalesDetail {
   total: number;
 }
 
-/**
- * Get a detailed breakdown of tickets sold per day, grouped by event.
- */
 export function getDailySalesBreakdown(edition: FestivalEdition): DailySalesDetail[] {
   const days = getEditionDays(edition);
 
@@ -357,20 +324,22 @@ export function getDailySalesBreakdown(edition: FestivalEdition): DailySalesDeta
 
 /**
  * Get today's presenze breakdown per event.
- * Each event's ticket delta is multiplied by the number of days it covers.
+ * FIX: Uses yesterdayBaseline as primary reference.
  */
 export function getTodayPresenzeBreakdown(
   edition: FestivalEdition,
   todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+  yesterdayBaseline?: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesEventDetail[] {
-  if (!todayBaseline) return [];
+  const reference = yesterdayBaseline || todayBaseline;
+  if (!reference) return [];
 
-  const todayMap = new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]));
+  const refMap = new Map(reference.map(s => [s.event_id, s.tickets_sold]));
   const details: TodaySalesEventDetail[] = [];
 
   for (const event of edition.events) {
-    const baselineSold = todayMap.get(event.id) ?? event.ticketsSold;
-    const diffToday = Math.max(0, event.ticketsSold - baselineSold);
+    const refSold = refMap.get(event.id) ?? event.ticketsSold;
+    const diffToday = Math.max(0, event.ticketsSold - refSold);
     if (diffToday > 0) {
       const days = getEventDays(event, edition.key);
       const presenze = diffToday * days.length;
