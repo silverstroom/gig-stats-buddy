@@ -9,13 +9,13 @@ interface Props {
 }
 
 const PIE_COLORS = [
-  'hsl(220, 100%, 55%)',
-  'hsl(42, 100%, 50%)',
-  'hsl(280, 80%, 55%)',
-  'hsl(160, 70%, 45%)',
-  'hsl(350, 80%, 55%)',
+  'hsl(220, 90%, 55%)',
+  'hsl(42, 95%, 55%)',
+  'hsl(280, 60%, 55%)',
+  'hsl(160, 60%, 45%)',
+  'hsl(350, 75%, 55%)',
   'hsl(30, 90%, 55%)',
-  'hsl(190, 80%, 50%)',
+  'hsl(190, 70%, 50%)',
 ];
 
 function DayChart({ day }: { day: DailySalesDetail }) {
@@ -28,15 +28,15 @@ function DayChart({ day }: { day: DailySalesDetail }) {
 
   return (
     <div className="flex items-center gap-4">
-      <div className="w-[160px] h-[160px] flex-shrink-0">
+      <div className="w-[140px] h-[140px] flex-shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={40}
-              outerRadius={70}
+              innerRadius={36}
+              outerRadius={62}
               dataKey="value"
               stroke="none"
             >
@@ -49,8 +49,8 @@ function DayChart({ day }: { day: DailySalesDetail }) {
               contentStyle={{
                 background: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                fontSize: '12px',
+                borderRadius: '16px',
+                fontSize: '11px',
               }}
             />
           </PieChart>
@@ -60,7 +60,7 @@ function DayChart({ day }: { day: DailySalesDetail }) {
         {data.map((item, i) => (
           <div key={i} className="flex items-center gap-1.5 text-[10px]">
             <span
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              className="w-2 h-2 rounded-full flex-shrink-0"
               style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
             />
             <span className="text-muted-foreground truncate">{item.name}</span>
@@ -78,36 +78,33 @@ export function DailySalesBreakdown({ breakdown }: Props) {
   if (breakdown.length === 0) return null;
 
   return (
-    <Card className="glass-card rounded-2xl">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base font-bold">
+    <div className="soft-card">
+      <div className="p-5 border-b border-border/30">
+        <div className="flex items-center gap-2">
           <ShoppingBag className="w-5 h-5 text-primary" />
-          Dettaglio vendite giornaliere
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Quanti biglietti sono stati venduti ogni giorno e per cosa
+          <h3 className="font-bold text-base">Dettaglio vendite giornaliere</h3>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Biglietti venduti ogni giorno e per cosa
         </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {breakdown.map((day, idx) => (
+      </div>
+      <div className="p-5 space-y-6">
+        {breakdown.map((day) => (
           <div key={day.date}>
-            <h4 className="text-sm font-semibold mb-2 text-foreground">
+            <h4 className="text-sm font-semibold mb-2">
               {day.day}{' '}
               <span className="text-muted-foreground font-normal">
                 — {day.total.toLocaleString('it-IT')} presenze
               </span>
             </h4>
-
-            {/* Chart */}
             <DayChart day={day} />
 
-            {/* Table */}
-            <div className="rounded-lg border overflow-hidden mt-2">
+            <div className="rounded-2xl border border-border/30 overflow-hidden mt-3">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs">Evento / Biglietto</TableHead>
-                    <TableHead className="text-xs text-right w-24">Venduti</TableHead>
+                    <TableHead className="text-[10px]">Evento / Biglietto</TableHead>
+                    <TableHead className="text-[10px] text-right w-20">Venduti</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -124,7 +121,7 @@ export function DailySalesBreakdown({ breakdown }: Props) {
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
