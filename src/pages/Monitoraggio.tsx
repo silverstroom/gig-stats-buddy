@@ -105,23 +105,48 @@ const Monitoraggio = () => {
     }
   }, []);
 
+  const fetchAllTicketSnapshots = useCallback(async (fromDate: string, toDate: string) => {
+    const pageSize = 1000;
+    let offset = 0;
+    const allRows: Array<{ snapshot_date: string; event_id: string | null; event_name: string | null; tickets_sold: number }> = [];
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('ticket_snapshots')
+        .select('snapshot_date, event_id, event_name, tickets_sold')
+        .gte('snapshot_date', fromDate)
+        .lte('snapshot_date', toDate)
+        .order('snapshot_date')
+        .range(offset, offset + pageSize - 1);
+
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allRows.push(...data);
+      if (data.length < pageSize) break;
+      offset += pageSize;
+    }
+
+    return allRows;
+  }, []);
+
   const computeCF14SnapshotDeltas = useCallback(async (edFrom: string, edTo: string) => {
     const dayBefore = format(addDays(new Date(edFrom), -1), 'yyyy-MM-dd');
-    
-    const { data: snapshots } = await supabase
-      .from('ticket_snapshots')
-      .select('snapshot_date, event_name, tickets_sold')
-      .gte('snapshot_date', dayBefore)
-      .lte('snapshot_date', edTo)
-      .order('snapshot_date');
 
-    if (!snapshots || snapshots.length === 0) return [];
+    const snapshots = await fetchAllTicketSnapshots(dayBefore, edTo);
+    if (snapshots.length === 0) return [];
 
-    const byDate = new Map<string, Map<string, number>>();
+    const byDate = new Map<string, Map<string, { sold: number; eventName: string }>>();
     for (const s of snapshots) {
       const d = s.snapshot_date.split('T')[0];
       if (!byDate.has(d)) byDate.set(d, new Map());
-      byDate.get(d)!.set(s.event_name || '', (byDate.get(d)!.get(s.event_name || '') || 0) + s.tickets_sold);
+
+      const eventKey = s.event_id || `name:${s.event_name || 'unknown'}`;
+      const current = byDate.get(d)!.get(eventKey);
+      byDate.get(d)!.set(eventKey, {
+        sold: (current?.sold || 0) + s.tickets_sold,
+        eventName: s.event_name || current?.eventName || '',
+      });
     }
 
     const sortedDates = Array.from(byDate.keys()).sort();
@@ -134,12 +159,12 @@ const Monitoraggio = () => {
 
       const prevMap = byDate.get(prevDate)!;
       const currMap = byDate.get(currDate)!;
-      
+
       let dayPresenze = 0;
-      for (const [eventName, currSold] of currMap) {
-        const prevSold = prevMap.get(eventName) || 0;
-        const ticketDelta = Math.max(0, currSold - prevSold);
-        dayPresenze += ticketDelta * getPresenzeMultiplier(eventName);
+      for (const [eventKey, currEvent] of currMap) {
+        const prevSold = prevMap.get(eventKey)?.sold || 0;
+        const ticketDelta = Math.max(0, currEvent.sold - prevSold);
+        dayPresenze += ticketDelta * getPresenzeMultiplier(currEvent.eventName);
       }
 
       if (dayPresenze > 0) {
@@ -148,29 +173,35 @@ const Monitoraggio = () => {
     }
 
     const currentEvents = eventsRef.current;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
+
     if (todayStr >= edFrom && todayStr <= edTo && currentEvents.length > 0) {
       const latestSnapshotDate = sortedDates[sortedDates.length - 1];
+
       if (latestSnapshotDate && latestSnapshotDate < todayStr) {
         const latestMap = byDate.get(latestSnapshotDate)!;
         let todayPresenze = 0;
+
         for (const event of currentEvents) {
-          const prevSold = latestMap.get(event.name) || 0;
+          const prevSold = latestMap.get(event.id)?.sold || 0;
           const ticketDelta = Math.max(0, event.ticketsSold - prevSold);
           todayPresenze += ticketDelta * getPresenzeMultiplier(event.name);
         }
+
         if (todayPresenze > 0) {
           deltas.push({ sale_date: todayStr, presenze_delta: todayPresenze });
         }
       } else if (latestSnapshotDate === todayStr) {
         const todayMap = byDate.get(todayStr)!;
         let todayLiveDelta = 0;
+
         for (const event of currentEvents) {
-          const baselineSold = todayMap.get(event.name) || 0;
+          const baselineSold = todayMap.get(event.id)?.sold || 0;
           const ticketDelta = Math.max(0, event.ticketsSold - baselineSold);
           todayLiveDelta += ticketDelta * getPresenzeMultiplier(event.name);
         }
-        const existingIdx = deltas.findIndex(d => d.sale_date === todayStr);
+
+        const existingIdx = deltas.findIndex((d) => d.sale_date === todayStr);
         if (existingIdx >= 0) {
           deltas[existingIdx].presenze_delta += todayLiveDelta;
         } else if (todayLiveDelta > 0) {
@@ -180,7 +211,7 @@ const Monitoraggio = () => {
     }
 
     return deltas;
-  }, []);
+  }, [fetchAllTicketSnapshots]);
 
   const fetchComparison = useCallback(async () => {
     setLoading(true);
