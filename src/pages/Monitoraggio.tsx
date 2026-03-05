@@ -31,9 +31,11 @@ interface EditionResult {
   dailyData: { sale_date: string; presenze_delta: number }[];
 }
 
+function isColorFestEvent(eventName: string): boolean {
+  return /color\s*fest\s*\d/i.test(eventName);
+}
+
 function getPresenzeMultiplier(eventName: string): number {
-  if (/winter/i.test(eventName)) return /abbonamento/i.test(eventName) ? 2 : 1;
-  if (/pasquetta/i.test(eventName)) return 1;
   if (/2\s*days?/i.test(eventName)) return 2;
   if (/(abbonamento|full)/i.test(eventName) && !/1\s*day|one\s*day/i.test(eventName)) return 3;
   return 1;
@@ -133,7 +135,8 @@ const Monitoraggio = () => {
   const computeCF14SnapshotDeltas = useCallback(async (edFrom: string, edTo: string) => {
     const dayBefore = format(addDays(new Date(edFrom), -1), 'yyyy-MM-dd');
 
-    const snapshots = await fetchAllTicketSnapshots(dayBefore, edTo);
+    const allSnapshots = await fetchAllTicketSnapshots(dayBefore, edTo);
+    const snapshots = allSnapshots.filter(s => isColorFestEvent(s.event_name || ''));
     if (snapshots.length === 0) return [];
 
     const byDate = new Map<string, Map<string, { sold: number; eventName: string }>>();
@@ -172,7 +175,7 @@ const Monitoraggio = () => {
       }
     }
 
-    const currentEvents = eventsRef.current;
+    const currentEvents = eventsRef.current.filter(e => isColorFestEvent(e.name));
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
 
     if (todayStr >= edFrom && todayStr <= edTo && currentEvents.length > 0) {
