@@ -135,7 +135,8 @@ const Monitoraggio = () => {
   const computeCF14SnapshotDeltas = useCallback(async (edFrom: string, edTo: string) => {
     const dayBefore = format(addDays(new Date(edFrom), -1), 'yyyy-MM-dd');
 
-    const snapshots = await fetchAllTicketSnapshots(dayBefore, edTo);
+    const allSnapshots = await fetchAllTicketSnapshots(dayBefore, edTo);
+    const snapshots = allSnapshots.filter(s => isColorFestEvent(s.event_name || ''));
     if (snapshots.length === 0) return [];
 
     const byDate = new Map<string, Map<string, { sold: number; eventName: string }>>();
