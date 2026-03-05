@@ -221,8 +221,8 @@ export interface TodaySalesEventDetail {
 
 /**
  * Compute how many tickets were sold today for each festival day.
- * FIX: Uses yesterdayBaseline as reference to capture ALL tickets sold since yesterday,
- * including those sold between midnight and the first app open.
+ * Uses todayBaseline (first snapshot of today) as primary reference.
+ * Falls back to yesterdayBaseline only if todayBaseline is not available yet.
  */
 export function getTodaySalesPerDay(
   edition: FestivalEdition,
@@ -230,14 +230,13 @@ export function getTodaySalesPerDay(
   yesterdayBaseline: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesPerDay[] {
   const days = getEditionDays(edition);
-  if (!yesterdayBaseline && !todayBaseline) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
+  if (!todayBaseline && !yesterdayBaseline) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
 
-  // Use yesterday as reference for today's delta (captures all sales since yesterday)
-  const referenceMap = yesterdayBaseline
-    ? new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold]))
-    : todayBaseline
+  // Primary: today's baseline (first snapshot of today = tickets at start of day)
+  // Fallback: yesterday's baseline (if app hasn't been opened today yet)
+  const referenceMap = todayBaseline
     ? new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]))
-    : new Map<string, number>();
+    : new Map(yesterdayBaseline!.map(s => [s.event_id, s.tickets_sold]));
 
   const soldTodayPerDay: Record<string, number> = {};
   for (const d of days) {
@@ -265,15 +264,14 @@ export function getTodaySalesPerDay(
 
 /**
  * Get per-event breakdown of today's sales.
- * FIX: Uses yesterdayBaseline as primary reference to capture ALL daily sales.
+ * Uses todayBaseline as primary reference.
  */
 export function getTodaySalesBreakdown(
   edition: FestivalEdition,
   todayBaseline: { event_id: string; tickets_sold: number }[] | null,
   yesterdayBaseline?: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesEventDetail[] {
-  // Prefer yesterday's baseline to capture full day's sales
-  const reference = yesterdayBaseline || todayBaseline;
+  const reference = todayBaseline || yesterdayBaseline;
   if (!reference) return [];
 
   const refMap = new Map(reference.map(s => [s.event_id, s.tickets_sold]));
@@ -324,14 +322,14 @@ export function getDailySalesBreakdown(edition: FestivalEdition): DailySalesDeta
 
 /**
  * Get today's presenze breakdown per event.
- * FIX: Uses yesterdayBaseline as primary reference.
+ * Uses todayBaseline as primary reference.
  */
 export function getTodayPresenzeBreakdown(
   edition: FestivalEdition,
   todayBaseline: { event_id: string; tickets_sold: number }[] | null,
   yesterdayBaseline?: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesEventDetail[] {
-  const reference = yesterdayBaseline || todayBaseline;
+  const reference = todayBaseline || yesterdayBaseline;
   if (!reference) return [];
 
   const refMap = new Map(reference.map(s => [s.event_id, s.tickets_sold]));
