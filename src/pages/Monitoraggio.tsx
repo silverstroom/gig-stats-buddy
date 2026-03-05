@@ -31,9 +31,11 @@ interface EditionResult {
   dailyData: { sale_date: string; presenze_delta: number }[];
 }
 
+function isColorFestEvent(eventName: string): boolean {
+  return /color\s*fest\s*\d/i.test(eventName);
+}
+
 function getPresenzeMultiplier(eventName: string): number {
-  if (/winter/i.test(eventName)) return /abbonamento/i.test(eventName) ? 2 : 1;
-  if (/pasquetta/i.test(eventName)) return 1;
   if (/2\s*days?/i.test(eventName)) return 2;
   if (/(abbonamento|full)/i.test(eventName) && !/1\s*day|one\s*day/i.test(eventName)) return 3;
   return 1;
