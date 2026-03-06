@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { CalendarDays, CalendarRange, TrendingUp, TrendingDown, Upload, ArrowRightLeft, RefreshCw } from 'lucide-react';
-import { format, addDays, addYears, isSameDay, eachDayOfInterval } from 'date-fns';
+import { CalendarDays, CalendarRange, TrendingUp, TrendingDown, Upload, ArrowRightLeft, RefreshCw, Ticket, Users } from 'lucide-react';
+import { format, addDays, addYears, isSameDay, eachDayOfInterval, subDays, subMonths, startOfMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
@@ -23,12 +23,19 @@ const EDITIONS = [
 
 const CURRENT_YEAR = 2026;
 
-type Mode = 'single' | 'range';
+const PRESETS = [
+  { label: '7 giorni', getValue: () => ({ from: subDays(new Date(), 7), to: new Date() }) },
+  { label: '30 giorni', getValue: () => ({ from: subDays(new Date(), 30), to: new Date() }) },
+  { label: '3 mesi', getValue: () => ({ from: subMonths(new Date(), 3), to: new Date() }) },
+  { label: '6 mesi', getValue: () => ({ from: subMonths(new Date(), 6), to: new Date() }) },
+  { label: 'Da settembre', getValue: () => ({ from: new Date(2025, 8, 1), to: new Date() }) },
+];
 
 interface EditionResult {
   edition: typeof EDITIONS[number];
   totalPresenze: number;
-  dailyData: { sale_date: string; presenze_delta: number }[];
+  totalBiglietti: number;
+  dailyData: { sale_date: string; presenze_delta: number; tickets_delta: number }[];
 }
 
 function isColorFestEvent(eventName: string): boolean {
@@ -42,13 +49,9 @@ function getPresenzeMultiplier(eventName: string): number {
 }
 
 const Monitoraggio = () => {
-  const [mode, setMode] = useState<Mode>('range');
-  const [singleDate, setSingleDate] = useState<Date>(new Date());
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  });
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [activePreset, setActivePreset] = useState<number>(1); // default 30 giorni
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(PRESETS[1].getValue());
+  const [customCalendarOpen, setCustomCalendarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [hasData, setHasData] = useState<boolean | null>(null);
@@ -67,9 +70,22 @@ const Monitoraggio = () => {
   }, []);
 
   const selectedDates = useMemo(() => {
-    if (mode === 'single') return { from: singleDate, to: singleDate };
     return { from: dateRange?.from || new Date(), to: dateRange?.to || new Date() };
-  }, [mode, singleDate, dateRange]);
+  }, [dateRange]);
+
+  const handlePresetClick = (index: number) => {
+    setActivePreset(index);
+    setDateRange(PRESETS[index].getValue());
+    setCustomCalendarOpen(false);
+  };
+
+  const handleCustomRange = (range: DateRange | undefined) => {
+    setDateRange(range);
+    setActivePreset(-1);
+    if (range?.from && range?.to) {
+      setCustomCalendarOpen(false);
+    }
+  };
 
   const importBundled = useCallback(async () => {
     setImporting(true);
@@ -153,7 +169,7 @@ const Monitoraggio = () => {
     }
 
     const sortedDates = Array.from(byDate.keys()).sort();
-    const deltas: { sale_date: string; presenze_delta: number }[] = [];
+    const deltas: { sale_date: string; presenze_delta: number; tickets_delta: number }[] = [];
 
     for (let i = 1; i < sortedDates.length; i++) {
       const prevDate = sortedDates[i - 1];
@@ -164,14 +180,16 @@ const Monitoraggio = () => {
       const currMap = byDate.get(currDate)!;
 
       let dayPresenze = 0;
+      let dayTickets = 0;
       for (const [eventKey, currEvent] of currMap) {
         const prevSold = prevMap.get(eventKey)?.sold || 0;
         const ticketDelta = Math.max(0, currEvent.sold - prevSold);
+        dayTickets += ticketDelta;
         dayPresenze += ticketDelta * getPresenzeMultiplier(currEvent.eventName);
       }
 
-      if (dayPresenze > 0) {
-        deltas.push({ sale_date: currDate, presenze_delta: dayPresenze });
+      if (dayPresenze > 0 || dayTickets > 0) {
+        deltas.push({ sale_date: currDate, presenze_delta: dayPresenze, tickets_delta: dayTickets });
       }
     }
 
@@ -184,31 +202,36 @@ const Monitoraggio = () => {
       if (latestSnapshotDate && latestSnapshotDate < todayStr) {
         const latestMap = byDate.get(latestSnapshotDate)!;
         let todayPresenze = 0;
+        let todayTickets = 0;
 
         for (const event of currentEvents) {
           const prevSold = latestMap.get(event.id)?.sold || 0;
           const ticketDelta = Math.max(0, event.ticketsSold - prevSold);
+          todayTickets += ticketDelta;
           todayPresenze += ticketDelta * getPresenzeMultiplier(event.name);
         }
 
-        if (todayPresenze > 0) {
-          deltas.push({ sale_date: todayStr, presenze_delta: todayPresenze });
+        if (todayPresenze > 0 || todayTickets > 0) {
+          deltas.push({ sale_date: todayStr, presenze_delta: todayPresenze, tickets_delta: todayTickets });
         }
       } else if (latestSnapshotDate === todayStr) {
         const todayMap = byDate.get(todayStr)!;
-        let todayLiveDelta = 0;
+        let todayLivePresenze = 0;
+        let todayLiveTickets = 0;
 
         for (const event of currentEvents) {
           const baselineSold = todayMap.get(event.id)?.sold || 0;
           const ticketDelta = Math.max(0, event.ticketsSold - baselineSold);
-          todayLiveDelta += ticketDelta * getPresenzeMultiplier(event.name);
+          todayLiveTickets += ticketDelta;
+          todayLivePresenze += ticketDelta * getPresenzeMultiplier(event.name);
         }
 
         const existingIdx = deltas.findIndex((d) => d.sale_date === todayStr);
         if (existingIdx >= 0) {
-          deltas[existingIdx].presenze_delta += todayLiveDelta;
-        } else if (todayLiveDelta > 0) {
-          deltas.push({ sale_date: todayStr, presenze_delta: todayLiveDelta });
+          deltas[existingIdx].presenze_delta += todayLivePresenze;
+          deltas[existingIdx].tickets_delta += todayLiveTickets;
+        } else if (todayLivePresenze > 0 || todayLiveTickets > 0) {
+          deltas.push({ sale_date: todayStr, presenze_delta: todayLivePresenze, tickets_delta: todayLiveTickets });
         }
       }
     }
@@ -236,7 +259,7 @@ const Monitoraggio = () => {
       const [{ data: allHistorical }, cf14Deltas] = await Promise.all([
         supabase
           .from('historical_daily_presenze')
-          .select('edition_key, sale_date, presenze_delta')
+          .select('edition_key, sale_date, presenze_delta, tickets_delta')
           .gte('sale_date', globalFrom)
           .lte('sale_date', globalTo)
           .order('sale_date'),
@@ -250,7 +273,7 @@ const Monitoraggio = () => {
         const edDates = allEdFromTo.find(e => e.key === ed.key)!;
         let dailyData = (allHistorical || [])
           .filter(d => d.edition_key === ed.key && d.sale_date >= edDates.from && d.sale_date <= edDates.to)
-          .map(d => ({ sale_date: d.sale_date, presenze_delta: d.presenze_delta }));
+          .map(d => ({ sale_date: d.sale_date, presenze_delta: d.presenze_delta, tickets_delta: d.tickets_delta ?? 0 }));
 
         if (ed.key === 'CF14') {
           const historicalDates = new Set(dailyData.map(d => d.sale_date));
@@ -263,7 +286,8 @@ const Monitoraggio = () => {
         }
 
         const totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
-        return { edition: ed, totalPresenze, dailyData };
+        const totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
+        return { edition: ed, totalPresenze, totalBiglietti, dailyData };
       });
 
       setEditionResults(results);
@@ -285,7 +309,9 @@ const Monitoraggio = () => {
     return `${format(from, 'd MMM', { locale: it })} – ${format(to, 'd MMM yyyy', { locale: it })}`;
   }, [selectedDates]);
 
-  const cf14Total = editionResults.find(r => r.edition.key === 'CF14')?.totalPresenze || 0;
+  const cf14Result = editionResults.find(r => r.edition.key === 'CF14');
+  const cf14TotalPresenze = cf14Result?.totalPresenze || 0;
+  const cf14TotalBiglietti = cf14Result?.totalBiglietti || 0;
 
   const lineChartData = useMemo(() => {
     if (!editionResults.length || isSameDay(selectedDates.from, selectedDates.to)) return [];
@@ -299,11 +325,11 @@ const Monitoraggio = () => {
         const yearOffset = result.edition.year - CURRENT_YEAR;
         const targetDate = format(addYears(day, yearOffset), 'yyyy-MM-dd');
 
-        const cumulative = result.dailyData
+        const cumulativePresenze = result.dailyData
           .filter(d => d.sale_date <= targetDate)
           .reduce((s, d) => s + d.presenze_delta, 0);
 
-        entry[result.edition.key] = cumulative;
+        entry[result.edition.key] = cumulativePresenze;
       }
 
       return entry;
@@ -314,6 +340,7 @@ const Monitoraggio = () => {
     return editionResults.map(r => ({
       name: r.edition.label,
       presenze: r.totalPresenze,
+      biglietti: r.totalBiglietti,
       fill: r.edition.color,
     }));
   }, [editionResults]);
@@ -330,7 +357,7 @@ const Monitoraggio = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Monitoraggio</h1>
-            <p className="text-xs text-muted-foreground">Confronto presenze YoY</p>
+            <p className="text-xs text-muted-foreground">Confronto presenze e biglietti YoY</p>
           </div>
         </div>
       </header>
@@ -358,61 +385,63 @@ const Monitoraggio = () => {
           </div>
         )}
 
-        {/* Date Controls */}
+        {/* Date Controls - Redesigned */}
         {hasData && (
           <div className="soft-card p-4 space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-auto">
-                <TabsList className="rounded-2xl">
-                  <TabsTrigger value="single" className="gap-1.5 rounded-xl text-xs">
-                    <CalendarDays className="w-3.5 h-3.5" /> Giorno
-                  </TabsTrigger>
-                  <TabsTrigger value="range" className="gap-1.5 rounded-xl text-xs">
-                    <CalendarRange className="w-3.5 h-3.5" /> Periodo
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-1 text-[10px] rounded-xl">
-                <Upload className="w-3 h-3" />
-                CSV
-              </Button>
-              <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            {/* Preset chips */}
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handlePresetClick(idx)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    activePreset === idx
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+              <Popover open={customCalendarOpen} onOpenChange={setCustomCalendarOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2 font-semibold min-w-[180px] justify-start rounded-2xl text-sm h-10">
-                    <CalendarDays className="w-4 h-4" />
-                    {dateLabel}
-                  </Button>
+                  <button
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                      activePreset === -1
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                    }`}
+                  >
+                    <CalendarRange className="w-3 h-3" />
+                    Personalizzato
+                  </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
-                  {mode === 'single' ? (
-                    <Calendar
-                      mode="single"
-                      selected={singleDate}
-                      onSelect={(d) => { if (d) setSingleDate(d); setPopoverOpen(false); }}
-                      className="p-3 pointer-events-auto"
-                      locale={it}
-                    />
-                  ) : (
-                    <Calendar
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={(r) => { setDateRange(r); if (r?.from && r?.to) setPopoverOpen(false); }}
-                      numberOfMonths={2}
-                      className="p-3 pointer-events-auto"
-                      locale={it}
-                    />
-                  )}
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={handleCustomRange}
+                    numberOfMonths={1}
+                    className="p-3 pointer-events-auto"
+                    locale={it}
+                  />
                 </PopoverContent>
               </Popover>
+            </div>
 
-              <Button onClick={fetchComparison} disabled={loading} className="gap-2 font-semibold rounded-2xl h-10">
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-                Confronta
-              </Button>
+            {/* Current range display */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span className="font-medium">{dateLabel}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-1 text-[10px] rounded-xl h-7">
+                  <Upload className="w-3 h-3" />
+                  CSV
+                </Button>
+                <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileImport} />
+              </div>
             </div>
 
             <p className="text-[10px] text-muted-foreground">
@@ -434,11 +463,11 @@ const Monitoraggio = () => {
             {/* Edition Cards */}
             <div className="space-y-3">
               {editionResults.map((result, idx) => {
-                const diff = idx > 0 && result.totalPresenze > 0
-                  ? ((cf14Total - result.totalPresenze) / result.totalPresenze * 100)
+                const diffPresenze = idx > 0 && result.totalPresenze > 0
+                  ? ((cf14TotalPresenze - result.totalPresenze) / result.totalPresenze * 100)
                   : null;
-                const isUp = diff !== null && diff > 0;
-                const isDown = diff !== null && diff < 0;
+                const isUp = diffPresenze !== null && diffPresenze > 0;
+                const isDown = diffPresenze !== null && diffPresenze < 0;
 
                 return (
                   <div key={result.edition.key} className={`${CARD_STYLES_MON[idx % CARD_STYLES_MON.length]} p-4`}>
@@ -455,22 +484,36 @@ const Monitoraggio = () => {
                           })()}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xl font-extrabold font-mono" style={{ color: result.edition.color }}>
-                          {result.totalPresenze.toLocaleString('it-IT')}
+                      <div className="text-right space-y-0.5">
+                        <div className="flex items-center gap-2 justify-end">
+                          <div className="text-right">
+                            <div className="text-xl font-extrabold font-mono" style={{ color: result.edition.color }}>
+                              {result.totalPresenze.toLocaleString('it-IT')}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 justify-end">
+                              <Users className="w-2.5 h-2.5" /> presenze
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-muted-foreground">presenze</span>
+                        <div className="flex items-center gap-0.5 justify-end">
+                          <span className="text-sm font-bold font-mono text-foreground/70">
+                            {result.totalBiglietti.toLocaleString('it-IT')}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                            <Ticket className="w-2.5 h-2.5" /> biglietti
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {idx > 0 && diff !== null && result.totalPresenze > 0 && (
+                    {idx > 0 && diffPresenze !== null && result.totalPresenze > 0 && (
                       <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[10px] font-semibold ${
                         isUp ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                         isDown ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
                         'bg-muted text-muted-foreground'
                       }`}>
                         {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        CF14 {isUp ? '+' : ''}{diff.toFixed(1)}% vs {result.edition.label}
+                        CF14 {isUp ? '+' : ''}{diffPresenze.toFixed(1)}% vs {result.edition.label}
                       </div>
                     )}
 
@@ -485,16 +528,25 @@ const Monitoraggio = () => {
             {/* Bar Chart */}
             <div className="soft-card p-4">
               <h3 className="text-sm font-bold mb-3">Confronto diretto</h3>
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={barChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 16 }}
-                    formatter={(value: number) => [value.toLocaleString('it-IT'), 'Presenze']}
+                    formatter={(value: number, name: string) => [
+                      value.toLocaleString('it-IT'),
+                      name === 'presenze' ? 'Presenze' : 'Biglietti'
+                    ]}
                   />
+                  <Legend formatter={(value) => value === 'presenze' ? 'Presenze' : 'Biglietti'} />
                   <Bar dataKey="presenze" radius={[10, 10, 0, 0]}>
+                    {barChartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                  <Bar dataKey="biglietti" radius={[10, 10, 0, 0]} opacity={0.5}>
                     {barChartData.map((entry, i) => (
                       <Cell key={i} fill={entry.fill} />
                     ))}
@@ -549,6 +601,7 @@ const Monitoraggio = () => {
                   <thead>
                     <tr className="border-b border-border/30">
                       <th className="text-left py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Edizione</th>
+                      <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Biglietti</th>
                       <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Presenze</th>
                       <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">vs CF14</th>
                     </tr>
@@ -556,13 +609,16 @@ const Monitoraggio = () => {
                   <tbody>
                     {editionResults.map((result, idx) => {
                       const diff = idx > 0 && result.totalPresenze > 0
-                        ? ((cf14Total - result.totalPresenze) / result.totalPresenze * 100)
+                        ? ((cf14TotalPresenze - result.totalPresenze) / result.totalPresenze * 100)
                         : null;
                       return (
                         <tr key={result.edition.key} className="border-b border-border/20">
                           <td className="py-2 px-3 font-semibold text-xs flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: result.edition.color }} />
                             {result.edition.label}
+                          </td>
+                          <td className="text-right py-2 px-3 font-mono font-bold text-xs">
+                            {result.totalBiglietti.toLocaleString('it-IT')}
                           </td>
                           <td className="text-right py-2 px-3 font-mono font-bold text-xs">
                             {result.totalPresenze.toLocaleString('it-IT')}
