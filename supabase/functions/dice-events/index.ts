@@ -30,6 +30,77 @@ async function executeDiceQuery(query: string, apiKey: string) {
   }
 }
 
+async function fetchAllViewerEvents(apiKey: string) {
+  const allEdges: any[] = [];
+  let hasNextPage = true;
+  let afterCursor: string | null = null;
+  let totalCount = 0;
+
+  while (hasNextPage) {
+    const afterClause = afterCursor ? `, after: "${afterCursor}"` : '';
+    const query = `{
+      viewer {
+        events(first: 50${afterClause}) {
+          totalCount
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          edges {
+            node {
+              id
+              name
+              state
+              startDatetime
+              endDatetime
+              totalTicketAllocationQty
+              ticketTypes {
+                id
+                name
+                price
+                totalTicketAllocationQty
+              }
+              tickets(first: 0) {
+                totalCount
+              }
+            }
+          }
+        }
+      }
+    }`;
+
+    const { response, data } = await executeDiceQuery(query, apiKey);
+
+    if (!response.ok) {
+      throw new Error(`DICE API error: ${response.status}`);
+    }
+
+    const eventsNode = data?.data?.viewer?.events;
+    const edges = eventsNode?.edges || [];
+
+    totalCount = eventsNode?.totalCount || totalCount;
+    allEdges.push(...edges);
+
+    hasNextPage = Boolean(eventsNode?.pageInfo?.hasNextPage);
+    afterCursor = eventsNode?.pageInfo?.endCursor || null;
+
+    if (!afterCursor || (totalCount > 0 && allEdges.length >= totalCount)) {
+      hasNextPage = false;
+    }
+  }
+
+  return {
+    data: {
+      viewer: {
+        events: {
+          totalCount,
+          edges: allEdges,
+        },
+      },
+    },
+  };
+}
+
 function getTodayISO(): string {
   // Use Italian timezone so "today" resets at midnight Rome time
   const now = new Date();
