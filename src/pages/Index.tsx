@@ -18,6 +18,7 @@ import { TicketTypeTable } from '@/components/TicketTypeTable';
 import { DayDistributionTable } from '@/components/DayDistributionTable';
 import { DayBarChart } from '@/components/DayBarChart';
 import { DailySalesBreakdown } from '@/components/DailySalesBreakdown';
+import { WeeklySalesCard } from '@/components/WeeklySalesCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', 'soft-card-mint', 'soft-card-pink'];
