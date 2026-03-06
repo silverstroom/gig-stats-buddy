@@ -213,6 +213,9 @@ const Index = () => {
               ))}
             </div>
 
+            {/* Weekly Sales */}
+            {isLatestEdition && <WeeklySalesCard events={selectedEdition.events} />}
+
             {/* Chart */}
             <DayBarChart distribution={distribution} />
 
