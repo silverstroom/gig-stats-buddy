@@ -115,8 +115,16 @@ const Index = () => {
       <header className="px-5 pt-8 pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Ciao 👋</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">Color Fest</h1>
+            <p className="text-sm text-muted-foreground">
+              {(() => {
+                const hour = new Date().getHours();
+                const greeting = hour < 12 ? 'Buongiorno ☀️' : hour < 18 ? 'Buon pomeriggio 🌤️' : 'Buonasera 🌙';
+                const dateStr = format(new Date(), "EEEE d MMMM", { locale: it });
+                const capitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+                return `${greeting} · ${capitalized}`;
+              })()}
+            </p>
+            <img src={logoBlack} alt="Color Fest" className="h-10 mt-1 dark:invert" />
           </div>
           <Button
             onClick={fetchEvents}

@@ -65,6 +65,7 @@ export function DayDistributionTable({ distribution }: DayDistributionTableProps
           </TableRow>
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

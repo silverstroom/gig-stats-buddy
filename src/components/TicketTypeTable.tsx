@@ -59,6 +59,7 @@ export function TicketTypeTable({ rows }: TicketTypeTableProps) {
           </TableRow>
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }
