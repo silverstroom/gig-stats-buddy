@@ -115,7 +115,7 @@ const Index = () => {
       <header className="px-5 pt-8 pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground pb-[20px]">
+            <p className="text-sm text-muted-foreground pb-[5px]">
               {(() => {
                 const hour = new Date().getHours();
                 const greeting = hour < 12 ? 'Buongiorno ☀️' : hour < 18 ? 'Buon pomeriggio 🌤️' : 'Buonasera 🌙';
