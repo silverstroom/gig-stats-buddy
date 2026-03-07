@@ -559,7 +559,7 @@ const Monitoraggio = () => {
             {lineChartData.length > 1 && (
               <div className="soft-card p-4">
                 <h3 className="text-sm font-bold mb-3">Andamento cumulativo</h3>
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={lineChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="day" tick={{ fontSize: 9 }} />

@@ -34,7 +34,7 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
       <div className="flex items-start justify-between">
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
-          <p className={`text-3xl font-extrabold font-mono tracking-tight ${colorClass}`}>
+          <p className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${colorClass}`}>
             {typeof value === 'number' ? value.toLocaleString('it-IT') : value}
           </p>
           {subtitle && (
