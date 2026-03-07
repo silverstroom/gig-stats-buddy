@@ -226,17 +226,15 @@ export interface TodaySalesEventDetail {
  */
 export function getTodaySalesPerDay(
   edition: FestivalEdition,
-  todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+  _todayBaseline: { event_id: string; tickets_sold: number }[] | null,
   yesterdayBaseline: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesPerDay[] {
   const days = getEditionDays(edition);
-  if (!todayBaseline && !yesterdayBaseline) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
+  // Always compare live data vs yesterday's snapshot (= last known state from previous day)
+  // This correctly captures overnight sales that would be missed by today's first-fetch baseline
+  if (!yesterdayBaseline) return days.map(d => ({ date: d, soldToday: 0, soldYesterday: 0 }));
 
-  // Primary: today's baseline (first snapshot of today = tickets at start of day)
-  // Fallback: yesterday's baseline (if app hasn't been opened today yet)
-  const referenceMap = todayBaseline
-    ? new Map(todayBaseline.map(s => [s.event_id, s.tickets_sold]))
-    : new Map(yesterdayBaseline!.map(s => [s.event_id, s.tickets_sold]));
+  const referenceMap = new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold]));
 
   const soldTodayPerDay: Record<string, number> = {};
   for (const d of days) {
@@ -268,13 +266,12 @@ export function getTodaySalesPerDay(
  */
 export function getTodaySalesBreakdown(
   edition: FestivalEdition,
-  todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+  _todayBaseline: { event_id: string; tickets_sold: number }[] | null,
   yesterdayBaseline?: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesEventDetail[] {
-  const reference = todayBaseline || yesterdayBaseline;
-  if (!reference) return [];
+  if (!yesterdayBaseline) return [];
 
-  const refMap = new Map(reference.map(s => [s.event_id, s.tickets_sold]));
+  const refMap = new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold]));
   const details: TodaySalesEventDetail[] = [];
 
   for (const event of edition.events) {
@@ -326,13 +323,12 @@ export function getDailySalesBreakdown(edition: FestivalEdition): DailySalesDeta
  */
 export function getTodayPresenzeBreakdown(
   edition: FestivalEdition,
-  todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+  _todayBaseline: { event_id: string; tickets_sold: number }[] | null,
   yesterdayBaseline?: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesEventDetail[] {
-  const reference = todayBaseline || yesterdayBaseline;
-  if (!reference) return [];
+  if (!yesterdayBaseline) return [];
 
-  const refMap = new Map(reference.map(s => [s.event_id, s.tickets_sold]));
+  const refMap = new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold]));
   const details: TodaySalesEventDetail[] = [];
 
   for (const event of edition.events) {

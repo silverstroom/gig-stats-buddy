@@ -172,7 +172,7 @@ const Index = () => {
                 colorClass="text-primary"
                 cardStyle="soft-card-blue"
                 todaySales={
-                  isLatestEdition && (snapshots.todayBaseline || snapshots.yesterdayBaseline)
+                  isLatestEdition && snapshots.yesterdayBaseline
                     ? { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday }
                     : null
                 }
@@ -187,7 +187,7 @@ const Index = () => {
                 colorClass="text-secondary"
                 cardStyle="soft-card-yellow"
                 todaySales={
-                  isLatestEdition && (snapshots.todayBaseline || snapshots.yesterdayBaseline)
+                  isLatestEdition && snapshots.yesterdayBaseline
                     ? { soldToday: totalPresenzeSoldToday, soldYesterday: 0 }
                     : null
                 }
@@ -205,7 +205,7 @@ const Index = () => {
                   colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
                   cardStyle={CARD_STYLES[(i + 2) % CARD_STYLES.length]}
                   todaySales={
-                    isLatestEdition && (snapshots.todayBaseline || snapshots.yesterdayBaseline)
+                    isLatestEdition && snapshots.yesterdayBaseline
                       ? todaySalesMap.get(day.date) || null
                       : null
                   }

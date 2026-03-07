@@ -163,10 +163,11 @@ Deno.serve(async (req) => {
         }));
 
         if (rows.length > 0) {
-          // INSERT only if no snapshot exists for today (preserves first-of-day baseline)
+          // Always update today's snapshot to latest values
+          // "Sold today" is calculated by comparing live vs YESTERDAY's snapshot
           await sb
             .from('ticket_snapshots')
-            .upsert(rows, { onConflict: 'event_id,snapshot_date', ignoreDuplicates: true })
+            .upsert(rows, { onConflict: 'event_id,snapshot_date', ignoreDuplicates: false })
             .throwOnError();
         }
 
