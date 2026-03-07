@@ -4,18 +4,18 @@ import { Home, TrendingUp, Target, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Home', icon: Home },
-  { to: '/monitoraggio', label: 'Monitor', icon: TrendingUp },
-  { to: '/obiettivo', label: 'Goal', icon: Target },
-  { to: '/profilo', label: 'Profilo', icon: User },
-];
+{ to: '/', label: 'Home', icon: Home },
+{ to: '/monitoraggio', label: 'Monitor', icon: TrendingUp },
+{ to: '/obiettivo', label: 'Goal', icon: Target },
+{ to: '/profilo', label: 'Profilo', icon: User }];
+
 
 export function BottomNav() {
   const location = useLocation();
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-50 safe-area-bottom">
-      <div className="flex items-center justify-around h-16 max-w-md mx-auto px-3 bg-foreground/90 backdrop-blur-xl rounded-[2rem] shadow-lg">
+      <div className="flex items-center justify-around h-16 max-w-md mx-auto px-3 backdrop-blur-xl rounded-[2rem] shadow-lg bg-blue-900">
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.to;
           const Icon = item.icon;
@@ -25,11 +25,11 @@ export function BottomNav() {
               to={item.to}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-2xl transition-all duration-200',
-                isActive
-                  ? 'text-background'
-                  : 'text-background/50 hover:text-background/70'
-              )}
-            >
+                isActive ?
+                'text-background' :
+                'text-background/50 hover:text-background/70'
+              )}>
+              
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-200',
                 isActive && 'bg-background/15'
@@ -39,10 +39,10 @@ export function BottomNav() {
               <span className={cn('text-[9px] font-medium', isActive && 'font-bold')}>
                 {item.label}
               </span>
-            </NavLink>
-          );
+            </NavLink>);
+
         })}
       </div>
-    </nav>
-  );
+    </nav>);
+
 }
