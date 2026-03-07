@@ -13,12 +13,13 @@ export function TicketTypeTable({ rows }: TicketTypeTableProps) {
 
   return (
     <div className="soft-card overflow-hidden">
-      <div className="p-5 border-b border-border/30">
+      <div className="p-4 sm:p-5 border-b border-border/30">
         <h3 className="font-bold text-base">Biglietti per Tipologia</h3>
         <p className="text-[11px] text-muted-foreground mt-1">
           Ogni riga = un evento DICE con i giorni coperti
         </p>
       </div>
+      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="border-border/30">
@@ -58,6 +59,7 @@ export function TicketTypeTable({ rows }: TicketTypeTableProps) {
           </TableRow>
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

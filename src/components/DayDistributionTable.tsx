@@ -19,12 +19,13 @@ export function DayDistributionTable({ distribution }: DayDistributionTableProps
 
   return (
     <div className="soft-card overflow-hidden">
-      <div className="p-5 border-b border-border/30">
+      <div className="p-4 sm:p-5 border-b border-border/30">
         <h3 className="font-bold text-base">Presenze per Giorno</h3>
         <p className="text-[11px] text-muted-foreground mt-1">
           Multi-giorno contati per ogni giorno coperto
         </p>
       </div>
+      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="border-border/30">
@@ -64,6 +65,7 @@ export function DayDistributionTable({ distribution }: DayDistributionTableProps
           </TableRow>
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }
