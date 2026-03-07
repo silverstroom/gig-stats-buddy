@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
+import logoBlack from '@/assets/logo_black.png';
 import {
   groupEventsByEdition,
   calculateEditionAttendance,
