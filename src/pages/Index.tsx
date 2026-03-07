@@ -172,7 +172,7 @@ const Index = () => {
                 colorClass="text-primary"
                 cardStyle="soft-card-blue"
                 todaySales={
-                  isLatestEdition && (snapshots.todayBaseline || snapshots.yesterdayBaseline)
+                  isLatestEdition && snapshots.yesterdayBaseline
                     ? { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday }
                     : null
                 }
