@@ -205,7 +205,7 @@ const Index = () => {
                   colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
                   cardStyle={CARD_STYLES[(i + 2) % CARD_STYLES.length]}
                   todaySales={
-                    isLatestEdition && (snapshots.todayBaseline || snapshots.yesterdayBaseline)
+                    isLatestEdition && snapshots.yesterdayBaseline
                       ? todaySalesMap.get(day.date) || null
                       : null
                   }
