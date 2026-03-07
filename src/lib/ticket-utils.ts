@@ -323,13 +323,12 @@ export function getDailySalesBreakdown(edition: FestivalEdition): DailySalesDeta
  */
 export function getTodayPresenzeBreakdown(
   edition: FestivalEdition,
-  todayBaseline: { event_id: string; tickets_sold: number }[] | null,
+  _todayBaseline: { event_id: string; tickets_sold: number }[] | null,
   yesterdayBaseline?: { event_id: string; tickets_sold: number }[] | null,
 ): TodaySalesEventDetail[] {
-  const reference = todayBaseline || yesterdayBaseline;
-  if (!reference) return [];
+  if (!yesterdayBaseline) return [];
 
-  const refMap = new Map(reference.map(s => [s.event_id, s.tickets_sold]));
+  const refMap = new Map(yesterdayBaseline.map(s => [s.event_id, s.tickets_sold]));
   const details: TodaySalesEventDetail[] = [];
 
   for (const event of edition.events) {
