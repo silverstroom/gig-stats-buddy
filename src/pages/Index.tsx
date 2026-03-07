@@ -14,8 +14,8 @@ import {
   getTodaySalesPerDay,
   getTodaySalesBreakdown,
   getTodayPresenzeBreakdown,
-  type FestivalEdition,
-} from '@/lib/ticket-utils';
+  type FestivalEdition } from
+'@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
 import { TicketTypeTable } from '@/components/TicketTypeTable';
 import { DayDistributionTable } from '@/components/DayDistributionTable';
@@ -47,17 +47,17 @@ const Index = () => {
   const selectedEdition = editions.find((e) => e.key === selectedEditionKey);
 
   const distribution = useMemo(
-    () => (selectedEdition ? calculateEditionAttendance(selectedEdition) : []),
+    () => selectedEdition ? calculateEditionAttendance(selectedEdition) : [],
     [selectedEdition]
   );
 
   const ticketRows = useMemo(
-    () => (selectedEdition ? getEditionTicketRows(selectedEdition) : []),
+    () => selectedEdition ? getEditionTicketRows(selectedEdition) : [],
     [selectedEdition]
   );
 
   const totalTickets = useMemo(
-    () => (selectedEdition ? getTotalTickets(selectedEdition) : 0),
+    () => selectedEdition ? getTotalTickets(selectedEdition) : 0,
     [selectedEdition]
   );
 
@@ -69,20 +69,20 @@ const Index = () => {
   const isLatestEdition = editions.length > 0 && selectedEditionKey === editions[0].key;
 
   const dailySalesBreakdown = useMemo(
-    () => (isLatestEdition && selectedEdition ? getDailySalesBreakdown(selectedEdition) : []),
+    () => isLatestEdition && selectedEdition ? getDailySalesBreakdown(selectedEdition) : [],
     [isLatestEdition, selectedEdition]
   );
 
   const todaySalesPerDay = useMemo(
     () =>
-      isLatestEdition && selectedEdition
-        ? getTodaySalesPerDay(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
-        : [],
+    isLatestEdition && selectedEdition ?
+    getTodaySalesPerDay(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline) :
+    [],
     [isLatestEdition, selectedEdition, snapshots]
   );
 
   const todaySalesMap = useMemo(() => {
-    const m = new Map<string, { soldToday: number; soldYesterday: number }>();
+    const m = new Map<string, {soldToday: number;soldYesterday: number;}>();
     for (const d of todaySalesPerDay) {
       m.set(d.date, { soldToday: d.soldToday, soldYesterday: d.soldYesterday });
     }
@@ -91,17 +91,17 @@ const Index = () => {
 
   const todayBreakdown = useMemo(
     () =>
-      isLatestEdition && selectedEdition
-        ? getTodaySalesBreakdown(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
-        : [],
+    isLatestEdition && selectedEdition ?
+    getTodaySalesBreakdown(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline) :
+    [],
     [isLatestEdition, selectedEdition, snapshots]
   );
 
   const todayPresenzeBreakdown = useMemo(
     () =>
-      isLatestEdition && selectedEdition
-        ? getTodayPresenzeBreakdown(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline)
-        : [],
+    isLatestEdition && selectedEdition ?
+    getTodayPresenzeBreakdown(selectedEdition, snapshots.todayBaseline, snapshots.yesterdayBaseline) :
+    [],
     [isLatestEdition, selectedEdition, snapshots]
   );
 
@@ -115,7 +115,7 @@ const Index = () => {
       <header className="px-5 pt-8 pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground pb-[20px]">
               {(() => {
                 const hour = new Date().getHours();
                 const greeting = hour < 12 ? 'Buongiorno ☀️' : hour < 18 ? 'Buon pomeriggio 🌤️' : 'Buonasera 🌙';
@@ -131,97 +131,97 @@ const Index = () => {
             disabled={loading}
             variant="outline"
             size="icon"
-            className="rounded-2xl h-10 w-10 shadow-sm"
-          >
+            className="rounded-2xl h-10 w-10 shadow-sm">
+            
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
 
         {/* Edition Selector */}
-        {editions.length > 0 && (
-          <div className="mt-4">
+        {editions.length > 0 &&
+        <div className="mt-4">
             <Select value={selectedEditionKey || ''} onValueChange={setSelectedEditionKey}>
               <SelectTrigger className="w-full rounded-2xl bg-card border-border/40 font-semibold shadow-sm h-12">
                 <SelectValue placeholder="Seleziona un'edizione..." />
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
-                {editions.map((edition) => (
-                  <SelectItem key={edition.key} value={edition.key} className="rounded-xl">
+                {editions.map((edition) =>
+              <SelectItem key={edition.key} value={edition.key} className="rounded-xl">
                     {edition.label} ({edition.events.length} eventi)
                   </SelectItem>
-                ))}
+              )}
               </SelectContent>
             </Select>
           </div>
-        )}
+        }
       </header>
 
       <main className="px-5 space-y-5">
         {/* Error State */}
-        {error && (
-          <div className="soft-card-pink p-4">
+        {error &&
+        <div className="soft-card-pink p-4">
             <p className="text-sm text-destructive font-medium">Errore: {error}</p>
           </div>
-        )}
+        }
 
         {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-16">
+        {loading &&
+        <div className="flex items-center justify-center py-16">
             <RefreshCw className="w-8 h-8 animate-spin text-primary" />
           </div>
-        )}
+        }
 
         {/* Stats */}
-        {selectedEdition && (
-          <>
+        {selectedEdition &&
+        <>
             <div className="grid grid-cols-2 gap-3">
               <StatCard
-                title="Biglietti"
-                value={totalTickets}
-                subtitle="Totali venduti"
-                icon={<Ticket className="w-5 h-5" />}
-                colorClass="text-primary"
-                cardStyle="soft-card-blue"
-                todaySales={
-                  isLatestEdition && snapshots.yesterdayBaseline
-                    ? { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday }
-                    : null
-                }
-                todayBreakdown={isLatestEdition ? todayBreakdown : undefined}
-              />
+              title="Biglietti"
+              value={totalTickets}
+              subtitle="Totali venduti"
+              icon={<Ticket className="w-5 h-5" />}
+              colorClass="text-primary"
+              cardStyle="soft-card-blue"
+              todaySales={
+              isLatestEdition && snapshots.yesterdayBaseline ?
+              { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday } :
+              null
+              }
+              todayBreakdown={isLatestEdition ? todayBreakdown : undefined} />
+            
 
               <StatCard
-                title="Presenze"
-                value={totalPresenze}
-                subtitle="Somma giornaliere"
-                icon={<Users className="w-5 h-5" />}
-                colorClass="text-secondary"
-                cardStyle="soft-card-yellow"
-                todaySales={
-                  isLatestEdition && snapshots.yesterdayBaseline
-                    ? { soldToday: totalPresenzeSoldToday, soldYesterday: 0 }
-                    : null
-                }
-                todayBreakdown={isLatestEdition ? todayPresenzeBreakdown : undefined}
-                todayLabel="Presenze oggi"
-              />
+              title="Presenze"
+              value={totalPresenze}
+              subtitle="Somma giornaliere"
+              icon={<Users className="w-5 h-5" />}
+              colorClass="text-secondary"
+              cardStyle="soft-card-yellow"
+              todaySales={
+              isLatestEdition && snapshots.yesterdayBaseline ?
+              { soldToday: totalPresenzeSoldToday, soldYesterday: 0 } :
+              null
+              }
+              todayBreakdown={isLatestEdition ? todayPresenzeBreakdown : undefined}
+              todayLabel="Presenze oggi" />
+            
 
-              {distribution.map((day, i) => (
-                <StatCard
-                  key={day.date}
-                  title={day.day}
-                  value={day.count}
-                  subtitle={`Presenze ${day.day}`}
-                  icon={<CalendarDays className="w-5 h-5" />}
-                  colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
-                  cardStyle={CARD_STYLES[(i + 2) % CARD_STYLES.length]}
-                  todaySales={
-                    isLatestEdition && snapshots.yesterdayBaseline
-                      ? todaySalesMap.get(day.date) || null
-                      : null
-                  }
-                />
-              ))}
+              {distribution.map((day, i) =>
+            <StatCard
+              key={day.date}
+              title={day.day}
+              value={day.count}
+              subtitle={`Presenze ${day.day}`}
+              icon={<CalendarDays className="w-5 h-5" />}
+              colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
+              cardStyle={CARD_STYLES[(i + 2) % CARD_STYLES.length]}
+              todaySales={
+              isLatestEdition && snapshots.yesterdayBaseline ?
+              todaySalesMap.get(day.date) || null :
+              null
+              } />
+
+            )}
             </div>
 
             {/* Weekly Sales */}
@@ -236,24 +236,24 @@ const Index = () => {
               <DayDistributionTable distribution={distribution} />
             </div>
 
-            {dailySalesBreakdown.length > 0 && (
-              <DailySalesBreakdown breakdown={dailySalesBreakdown} />
-            )}
+            {dailySalesBreakdown.length > 0 &&
+          <DailySalesBreakdown breakdown={dailySalesBreakdown} />
+          }
           </>
-        )}
+        }
 
-        {!selectedEdition && !loading && events.length === 0 && (
-          <div className="text-center py-16 soft-card">
+        {!selectedEdition && !loading && events.length === 0 &&
+        <div className="text-center py-16 soft-card">
             <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nessun dato disponibile</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
               Clicca il pulsante di aggiornamento per caricare i dati.
             </p>
           </div>
-        )}
+        }
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Index;
