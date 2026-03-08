@@ -288,6 +288,10 @@ const Monitoraggio = () => {
         ),
       ]);
 
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
+      const cf14Dates = allEdFromTo.find(e => e.key === 'CF14')!;
+      const cf14RangeIncludesToday = todayStr >= cf14Dates.from && todayStr <= cf14Dates.to;
+
       const results = EDITIONS.map((ed) => {
         const edDates = allEdFromTo.find(e => e.key === ed.key)!;
         let dailyData = (allHistorical || [])
@@ -304,8 +308,22 @@ const Monitoraggio = () => {
           dailyData.sort((a, b) => a.sale_date.localeCompare(b.sale_date));
         }
 
-        const totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
-        const totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
+        let totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
+        let totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
+
+        // For CF14: if range includes today, use live API totals directly
+        // Snapshot deltas only cover dates since first snapshot and miss earlier sales
+        if (ed.key === 'CF14' && cf14RangeIncludesToday) {
+          const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
+          if (liveEvents.length > 0) {
+            const liveBiglietti = liveEvents.reduce((s, e) => s + e.ticketsSold, 0);
+            const livePresenze = liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0);
+            // Use live totals as they represent the true cumulative sales
+            totalBiglietti = liveBiglietti;
+            totalPresenze = livePresenze;
+          }
+        }
+
         return { edition: ed, totalPresenze, totalBiglietti, dailyData };
       });
 
