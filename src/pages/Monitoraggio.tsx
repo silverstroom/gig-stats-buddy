@@ -175,21 +175,6 @@ const Monitoraggio = () => {
     const sortedDates = Array.from(byDate.keys()).sort();
     const deltas: { sale_date: string; presenze_delta: number; tickets_delta: number }[] = [];
 
-    // If the first snapshot date is after edFrom, include its absolute totals
-    // as a synthetic delta (these are all sales before snapshot tracking began)
-    if (sortedDates.length > 0 && sortedDates[0] >= edFrom) {
-      const firstMap = byDate.get(sortedDates[0])!;
-      let initialPresenze = 0;
-      let initialTickets = 0;
-      for (const [, event] of firstMap) {
-        initialTickets += event.sold;
-        initialPresenze += event.sold * getPresenzeMultiplier(event.eventName);
-      }
-      if (initialPresenze > 0 || initialTickets > 0) {
-        deltas.push({ sale_date: sortedDates[0], presenze_delta: initialPresenze, tickets_delta: initialTickets });
-      }
-    }
-
     for (let i = 1; i < sortedDates.length; i++) {
       const prevDate = sortedDates[i - 1];
       const currDate = sortedDates[i];
@@ -258,6 +243,34 @@ const Monitoraggio = () => {
     return deltas;
   }, [fetchAllTicketSnapshots]);
 
+  // Fetch the CF14 baseline (total sold) at or before a given date
+  const fetchCF14Baseline = useCallback(async (beforeDate: string): Promise<{ biglietti: number; presenze: number }> => {
+    const { data } = await supabase
+      .from('ticket_snapshots')
+      .select('event_id, event_name, tickets_sold')
+      .lte('snapshot_date', beforeDate)
+      .order('snapshot_date', { ascending: false })
+      .limit(200);
+
+    if (!data || data.length === 0) return { biglietti: 0, presenze: 0 };
+
+    // Deduplicate: keep latest snapshot per event_id, only CF14
+    const seen = new Map<string, { sold: number; name: string }>();
+    for (const s of data) {
+      if (s.event_id && !seen.has(s.event_id) && isCF14Event(s.event_name || '')) {
+        seen.set(s.event_id, { sold: s.tickets_sold, name: s.event_name || '' });
+      }
+    }
+
+    let biglietti = 0;
+    let presenze = 0;
+    for (const [, ev] of seen) {
+      biglietti += ev.sold;
+      presenze += ev.sold * getPresenzeMultiplier(ev.name);
+    }
+    return { biglietti, presenze };
+  }, []);
+
   const fetchComparison = useCallback(async () => {
     setLoading(true);
     try {
@@ -275,22 +288,22 @@ const Monitoraggio = () => {
       const globalFrom = allEdFromTo.reduce((min, e) => e.from < min ? e.from : min, allEdFromTo[0].from);
       const globalTo = allEdFromTo.reduce((max, e) => e.to > max ? e.to : max, allEdFromTo[0].to);
 
-      const [{ data: allHistorical }, cf14Deltas] = await Promise.all([
+      const cf14Dates = allEdFromTo.find(e => e.key === 'CF14')!;
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
+      const cf14RangeIncludesToday = todayStr >= cf14Dates.from && todayStr <= cf14Dates.to;
+
+      const [{ data: allHistorical }, cf14Deltas, cf14Baseline] = await Promise.all([
         supabase
           .from('historical_daily_presenze')
           .select('edition_key, sale_date, presenze_delta, tickets_delta')
           .gte('sale_date', globalFrom)
           .lte('sale_date', globalTo)
           .order('sale_date'),
-        computeCF14SnapshotDeltas(
-          allEdFromTo.find(e => e.key === 'CF14')!.from,
-          allEdFromTo.find(e => e.key === 'CF14')!.to
-        ),
+        computeCF14SnapshotDeltas(cf14Dates.from, cf14Dates.to),
+        cf14RangeIncludesToday
+          ? fetchCF14Baseline(format(addDays(new Date(cf14Dates.from), -1), 'yyyy-MM-dd'))
+          : Promise.resolve({ biglietti: 0, presenze: 0 }),
       ]);
-
-      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
-      const cf14Dates = allEdFromTo.find(e => e.key === 'CF14')!;
-      const cf14RangeIncludesToday = todayStr >= cf14Dates.from && todayStr <= cf14Dates.to;
 
       const results = EDITIONS.map((ed) => {
         const edDates = allEdFromTo.find(e => e.key === ed.key)!;
@@ -311,16 +324,14 @@ const Monitoraggio = () => {
         let totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
         let totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
 
-        // For CF14: if range includes today, use live API totals directly
-        // Snapshot deltas only cover dates since first snapshot and miss earlier sales
+        // For CF14: compute total as (live now) - (baseline at period start)
         if (ed.key === 'CF14' && cf14RangeIncludesToday) {
           const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
           if (liveEvents.length > 0) {
             const liveBiglietti = liveEvents.reduce((s, e) => s + e.ticketsSold, 0);
             const livePresenze = liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0);
-            // Use live totals as they represent the true cumulative sales
-            totalBiglietti = liveBiglietti;
-            totalPresenze = livePresenze;
+            totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
+            totalPresenze = livePresenze - cf14Baseline.presenze;
           }
         }
 
@@ -334,7 +345,7 @@ const Monitoraggio = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedDates, computeCF14SnapshotDeltas]);
+  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline]);
 
   useEffect(() => {
     if (hasData) fetchComparison();
