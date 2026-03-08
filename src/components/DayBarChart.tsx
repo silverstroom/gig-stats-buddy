@@ -81,7 +81,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
         </div>
       )}
 
-      <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         {distribution.map((d, i) => {
           const cap = capacities[d.date] || 2000;
           const sold = d.count;
@@ -94,17 +94,17 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
           ];
 
           return (
-            <div key={d.date} className="flex flex-col items-center min-w-[140px] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink">
-              <p className="text-sm font-bold mb-2">{d.day}</p>
-              <div className="h-[130px] w-[130px] sm:h-[160px] sm:w-[160px]">
+            <div key={d.date} className="flex flex-col items-center">
+              <p className="text-xs sm:text-sm font-bold mb-1 sm:mb-2">{d.day}</p>
+              <div className="h-[100px] w-[100px] sm:h-[160px] sm:w-[160px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={40}
-                      outerRadius={58}
+                      innerRadius="58%"
+                      outerRadius="82%"
                       startAngle={90}
                       endAngle={-270}
                       dataKey="value"
@@ -117,7 +117,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                         position="center"
                         style={{
                           fill: 'hsl(220, 25%, 10%)',
-                          fontSize: '18px',
+                          fontSize: '16px',
                           fontWeight: 800,
                           fontFamily: 'JetBrains Mono',
                         }}
@@ -126,10 +126,9 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xs font-mono text-muted-foreground mt-1">
+              <p className="text-[10px] sm:text-xs font-mono text-muted-foreground mt-1 text-center">
                 <span className="font-bold text-foreground">{sold.toLocaleString('it-IT')}</span>
-                {' / '}
-                {cap.toLocaleString('it-IT')}
+                <span className="block sm:inline sm:ml-0"> / {cap.toLocaleString('it-IT')}</span>
               </p>
             </div>
           );
