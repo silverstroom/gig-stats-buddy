@@ -36,6 +36,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
   const [editing, setEditing] = useState(false);
   const { theme } = useTheme();
   const remainingColor = theme === 'dark' ? REMAINING_COLOR_DARK : REMAINING_COLOR_LIGHT;
+  const [capacities, setCapacities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (distribution.length > 0) {
