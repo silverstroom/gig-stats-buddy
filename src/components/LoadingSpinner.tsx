@@ -32,22 +32,22 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
     requestAnimationFrame(tick);
   }, []);
 
-  const logoSize = size === 'sm' ? 'w-8 h-8' : 'w-12 h-12';
-  const barWidth = size === 'sm' ? 'w-32' : 'w-48';
+  const logoSize = size === 'sm' ? 'w-12 h-12' : 'w-20 h-20 sm:w-24 sm:h-24';
+  const barWidth = size === 'sm' ? 'w-40' : 'w-56 sm:w-64';
 
   return (
-    <div className={`flex flex-col items-center gap-4 ${className}`}>
+    <div className={`flex flex-col items-center gap-5 sm:gap-6 py-4 ${className}`}>
       <img
         src={logoBlack}
         alt="Loading"
         className={`${logoSize} object-contain animate-pulse drop-shadow-lg`}
       />
-      <div className={barWidth}>
-        <Progress value={progress} className="h-2 bg-muted/50" />
+      <div className={`${barWidth} flex flex-col items-center gap-2`}>
+        <Progress value={progress} className="h-2.5 sm:h-3 bg-muted/50 w-full" />
+        <span className="text-sm sm:text-base text-muted-foreground font-semibold tabular-nums">
+          {Math.round(progress)}%
+        </span>
       </div>
-      <span className="text-xs text-muted-foreground font-medium tabular-nums">
-        {Math.round(progress)}%
-      </span>
     </div>
   );
 }
