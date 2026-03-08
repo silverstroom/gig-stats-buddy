@@ -136,6 +136,14 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              variant="outline"
+              size="icon"
+              className="rounded-2xl h-10 w-10 shadow-sm"
+              title={theme === 'dark' ? 'Modalità chiara' : 'Modalità scura'}>
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button
               onClick={async () => {
                 const granted = await requestPermission();
                 setNotifEnabled(granted);
