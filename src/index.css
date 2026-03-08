@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 40 30% 97%;
+    --background: 40 25% 93%;
     --foreground: 220 25% 10%;
 
     --card: 0 0% 100%;
@@ -64,7 +64,7 @@
   }
 
   .dark {
-    --background: 222 25% 6%;
+    --background: 222 25% 4%;
     --foreground: 40 20% 95%;
 
     --card: 222 22% 11%;
@@ -142,41 +142,49 @@
   }
 
   .soft-card {
-    @apply bg-card rounded-3xl border border-border/40 shadow-sm;
+    @apply bg-card rounded-3xl border border-border/40;
+    box-shadow: 0 2px 8px -2px hsl(220 20% 20% / 0.06), 0 8px 24px -4px hsl(220 20% 20% / 0.08);
   }
 
   .soft-card-orange {
     background: hsl(var(--card-orange));
-    @apply rounded-3xl border-0 shadow-sm;
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(30 60% 40% / 0.08), 0 8px 24px -4px hsl(30 60% 40% / 0.1);
   }
 
   .soft-card-blue {
     background: hsl(var(--card-blue));
-    @apply rounded-3xl border-0 shadow-sm;
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(220 70% 50% / 0.08), 0 8px 24px -4px hsl(220 70% 50% / 0.1);
   }
 
   .soft-card-mint {
     background: hsl(var(--card-mint));
-    @apply rounded-3xl border-0 shadow-sm;
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(160 40% 40% / 0.08), 0 8px 24px -4px hsl(160 40% 40% / 0.1);
   }
 
   .soft-card-pink {
     background: hsl(var(--card-pink));
-    @apply rounded-3xl border-0 shadow-sm;
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(340 60% 50% / 0.08), 0 8px 24px -4px hsl(340 60% 50% / 0.1);
   }
 
   .soft-card-yellow {
     background: hsl(var(--card-yellow));
-    @apply rounded-3xl border-0 shadow-sm;
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(45 70% 40% / 0.08), 0 8px 24px -4px hsl(45 70% 40% / 0.1);
   }
 
   .soft-card-purple {
     background: hsl(var(--card-purple));
-    @apply rounded-3xl border-0 shadow-sm;
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(280 40% 50% / 0.08), 0 8px 24px -4px hsl(280 40% 50% / 0.1);
   }
 
   .glass-card {
-    @apply bg-card/90 backdrop-blur-xl border border-border/50 shadow-sm rounded-3xl;
+    @apply bg-card/90 backdrop-blur-xl border border-border/50 rounded-3xl;
+    box-shadow: 0 4px 16px -4px hsl(220 20% 20% / 0.08), 0 12px 32px -8px hsl(220 20% 20% / 0.1);
   }
 
   .stat-glow {
