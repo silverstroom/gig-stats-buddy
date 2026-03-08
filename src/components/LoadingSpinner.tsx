@@ -32,52 +32,17 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
 
   const logoSize = size === 'sm' ? 'w-12 h-12' : 'w-20 h-20 sm:w-24 sm:h-24';
   const barWidth = size === 'sm' ? 'w-40' : 'w-56 sm:w-64';
-  const iconSize = size === 'sm' ? 16 : 22;
 
   return (
     <div className={`relative flex flex-col items-center gap-5 sm:gap-6 py-4 ${className}`}>
-      {/* Lightning bolts */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[
-          { left: '8%', delay: '0s', dur: '1.8s' },
-          { left: '88%', delay: '0.6s', dur: '2.1s' },
-          { left: '20%', delay: '1.2s', dur: '1.6s' },
-          { left: '75%', delay: '0.3s', dur: '2s' },
-        ].map((bolt, i) => (
-          <Zap
-            key={i}
-            className="absolute text-primary/25"
-            size={iconSize}
-            style={{
-              left: bolt.left,
-              top: '15%',
-              animation: `boltFlash ${bolt.dur} ${bolt.delay} ease-in-out infinite`,
-            }}
-          />
-        ))}
-      </div>
+      <img
+        src={logoBlack}
+        alt="Loading"
+        className={`${logoSize} object-contain drop-shadow-lg`}
+        style={{ animation: 'rockPulse 0.6s ease-in-out infinite alternate' }}
+      />
 
-      {/* Guitar icons flanking logo */}
-      <div className="flex items-center gap-3 sm:gap-5">
-        <Guitar
-          className="text-primary/40"
-          size={size === 'sm' ? 20 : 28}
-          style={{ animation: 'rockTilt 1.2s ease-in-out infinite alternate' }}
-        />
-        <img
-          src={logoBlack}
-          alt="Loading"
-          className={`${logoSize} object-contain drop-shadow-lg`}
-          style={{ animation: 'rockPulse 0.6s ease-in-out infinite alternate' }}
-        />
-        <Guitar
-          className="text-primary/40 -scale-x-100"
-          size={size === 'sm' ? 20 : 28}
-          style={{ animation: 'rockTilt 1.2s 0.6s ease-in-out infinite alternate' }}
-        />
-      </div>
-
-      {/* Equalizer bars — aggressive rock style */}
+      {/* Equalizer bars */}
       <div className="flex items-end gap-1 h-7 sm:h-9">
         {[0, 1, 2, 3, 4, 5, 6].map((i) => (
           <div
@@ -98,17 +63,9 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
       </div>
 
       <style>{`
-        @keyframes rockTilt {
-          0% { transform: rotate(-8deg) scale(0.95); }
-          100% { transform: rotate(8deg) scale(1.05); }
-        }
         @keyframes rockPulse {
           0% { transform: scale(0.97); }
           100% { transform: scale(1.03); }
-        }
-        @keyframes boltFlash {
-          0%, 100% { opacity: 0; transform: scale(0.8); }
-          50% { opacity: 0.6; transform: scale(1.2); }
         }
         @keyframes eqBar {
           0% { height: 4px; }
