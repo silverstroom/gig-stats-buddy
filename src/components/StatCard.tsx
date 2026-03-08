@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { TodaySalesEventDetail } from '@/lib/ticket-utils';
 
@@ -15,34 +15,72 @@ interface StatCardProps {
   glowClass?: string;
 }
 
-const CARD_STYLES = [
-  'soft-card-blue',
-  'soft-card-yellow',
-  'soft-card-orange',
-  'soft-card-mint',
-  'soft-card-pink',
-  'soft-card-purple',
-];
+function useAnimatedNumber(target: number, duration = 900) {
+  const [display, setDisplay] = useState(target);
+  const prevRef = useRef(target);
+  const [flash, setFlash] = useState(false);
+
+  useEffect(() => {
+    const from = prevRef.current;
+    if (from === target) return;
+
+    setFlash(true);
+    const diff = target - from;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutQuart for satisfying deceleration
+      const eased = 1 - Math.pow(1 - progress, 4);
+      setDisplay(Math.round(from + diff * eased));
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        prevRef.current = target;
+        setTimeout(() => setFlash(false), 600);
+      }
+    };
+
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+
+  return { display, flash };
+}
 
 export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', cardStyle, todaySales, todayBreakdown, todayLabel, glowClass }: StatCardProps) {
   const pctChange = todaySales && todaySales.soldYesterday > 0
     ? Math.round(((todaySales.soldToday - todaySales.soldYesterday) / todaySales.soldYesterday) * 100)
     : null;
 
+  const isNumeric = typeof value === 'number';
+  const { display, flash } = useAnimatedNumber(isNumeric ? value : 0);
+
   return (
-    <div className={`${cardStyle || 'soft-card'} p-4 sm:p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-md`}>
-      <div className="flex items-start justify-between">
+    <div className={`${cardStyle || 'soft-card'} p-4 sm:p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-md relative overflow-hidden`}>
+      {/* Flash overlay on update */}
+      <div
+        className={`absolute inset-0 rounded-3xl pointer-events-none transition-opacity duration-700 ${
+          flash ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          background: 'radial-gradient(ellipse at 30% 50%, hsl(var(--primary) / 0.12) 0%, transparent 70%)',
+        }}
+      />
+
+      <div className="flex items-start justify-between relative">
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
-          <p className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${colorClass}`}>
-            {typeof value === 'number' ? value.toLocaleString('it-IT') : value}
+          <p className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight transition-transform duration-300 ${colorClass} ${flash ? 'scale-110' : 'scale-100'}`}
+             style={{ transformOrigin: 'left center' }}>
+            {isNumeric ? display.toLocaleString('it-IT') : value}
           </p>
           {subtitle && (
             <p className="text-[11px] text-muted-foreground mt-1">{subtitle}</p>
           )}
         </div>
         {icon && (
-          <div className={`p-2.5 rounded-2xl bg-foreground/5 ${colorClass}`}>
+          <div className={`p-2.5 rounded-2xl bg-foreground/5 ${colorClass} transition-transform duration-500 ${flash ? 'scale-125 rotate-12' : 'scale-100 rotate-0'}`}>
             {icon}
           </div>
         )}
@@ -50,7 +88,7 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
 
       {/* Today sales badge */}
       {todaySales !== null && todaySales !== undefined && (
-        <div className="mt-3 pt-3 border-t border-foreground/5">
+        <div className="mt-3 pt-3 border-t border-foreground/5 relative">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               {todayLabel || 'Venduti oggi'}
