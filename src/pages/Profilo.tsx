@@ -34,6 +34,10 @@ const Profilo = () => {
               <span className="text-muted-foreground">Dati da</span>
               <span className="font-semibold">DICE</span>
             </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Creata da</span>
+              <span className="font-semibold">Salvo Bilotti</span>
+            </div>
           </div>
         </div>
 
