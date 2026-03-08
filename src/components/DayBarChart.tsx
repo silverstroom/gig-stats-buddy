@@ -116,7 +116,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                         value={`${pct}%`}
                         position="center"
                         style={{
-                          fill: 'hsl(220, 25%, 10%)',
+                          fill: 'currentColor',
                           fontSize: '16px',
                           fontWeight: 800,
                           fontFamily: 'JetBrains Mono',
