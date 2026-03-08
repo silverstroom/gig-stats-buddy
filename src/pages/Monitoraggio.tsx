@@ -296,16 +296,20 @@ const Monitoraggio = () => {
         let totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
         let totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
 
-        // For CF14: if range includes today, use live API totals directly
-        // Snapshot deltas only cover dates since first snapshot and miss earlier sales
+        // For CF14: compute total as (live now) - (baseline at period start)
+        // This correctly filters by period regardless of snapshot coverage
         if (ed.key === 'CF14' && cf14RangeIncludesToday) {
           const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
           if (liveEvents.length > 0) {
             const liveBiglietti = liveEvents.reduce((s, e) => s + e.ticketsSold, 0);
             const livePresenze = liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0);
-            // Use live totals as they represent the true cumulative sales
-            totalBiglietti = liveBiglietti;
-            totalPresenze = livePresenze;
+            
+            // Find baseline: latest snapshot on or before period start
+            const periodStart = cf14Dates.from;
+            const baselineSnapshot = await fetchCF14Baseline(periodStart);
+            
+            totalBiglietti = liveBiglietti - baselineSnapshot.biglietti;
+            totalPresenze = livePresenze - baselineSnapshot.presenze;
           }
         }
 
