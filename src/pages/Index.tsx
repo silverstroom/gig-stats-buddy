@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays } from 'lucide-react';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
+import { useTicketNotifications } from '@/hooks/useTicketNotifications';
 import logoBlack from '@/assets/logo_black.png';
 import {
   groupEventsByEdition,
@@ -28,7 +29,11 @@ const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', '
 
 const Index = () => {
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
+  const { requestPermission } = useTicketNotifications(events);
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
+  const [notifEnabled, setNotifEnabled] = useState(() => 
+    'Notification' in window && Notification.permission === 'granted'
+  );
 
   useEffect(() => {
     fetchEvents();
@@ -124,17 +129,29 @@ const Index = () => {
                 return `${greeting} · ${capitalized}`;
               })()}
             </p>
-            <img src={logoBlack} alt="Color Fest" className="h-10 mt-1 dark:invert" />
+            <img src={logoBlack} alt="Color Fest" className="h-14 mt-1 dark:invert" />
           </div>
-          <Button
-            onClick={fetchEvents}
-            disabled={loading}
-            variant="outline"
-            size="icon"
-            className="rounded-2xl h-10 w-10 shadow-sm">
-            
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={async () => {
+                const granted = await requestPermission();
+                setNotifEnabled(granted);
+              }}
+              variant="outline"
+              size="icon"
+              className="rounded-2xl h-10 w-10 shadow-sm"
+              title={notifEnabled ? 'Notifiche attive' : 'Attiva notifiche'}>
+              {notifEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
+            </Button>
+            <Button
+              onClick={fetchEvents}
+              disabled={loading}
+              variant="outline"
+              size="icon"
+              className="rounded-2xl h-10 w-10 shadow-sm">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
 
         {/* Edition Selector */}

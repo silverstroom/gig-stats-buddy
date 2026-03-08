@@ -171,6 +171,21 @@ const Monitoraggio = () => {
     const sortedDates = Array.from(byDate.keys()).sort();
     const deltas: { sale_date: string; presenze_delta: number; tickets_delta: number }[] = [];
 
+    // If the first snapshot date is after edFrom, include its absolute totals
+    // as a synthetic delta (these are all sales before snapshot tracking began)
+    if (sortedDates.length > 0 && sortedDates[0] >= edFrom) {
+      const firstMap = byDate.get(sortedDates[0])!;
+      let initialPresenze = 0;
+      let initialTickets = 0;
+      for (const [, event] of firstMap) {
+        initialTickets += event.sold;
+        initialPresenze += event.sold * getPresenzeMultiplier(event.eventName);
+      }
+      if (initialPresenze > 0 || initialTickets > 0) {
+        deltas.push({ sale_date: sortedDates[0], presenze_delta: initialPresenze, tickets_delta: initialTickets });
+      }
+    }
+
     for (let i = 1; i < sortedDates.length; i++) {
       const prevDate = sortedDates[i - 1];
       const currDate = sortedDates[i];
