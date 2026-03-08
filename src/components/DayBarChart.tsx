@@ -115,7 +115,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                       stroke="none"
                     >
                       <Cell fill={SOLD_COLORS[i % SOLD_COLORS.length]} />
-                      <Cell fill={REMAINING_COLOR} />
+                      <Cell fill={remainingColor} />
                       <Label
                         value={`${pct}%`}
                         position="center"
