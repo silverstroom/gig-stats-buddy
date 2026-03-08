@@ -28,7 +28,7 @@ const Profilo = () => {
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Versione</span>
-              <span className="font-mono">1.0.0</span>
+              <span className="font-mono">2.0</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Dati da</span>
