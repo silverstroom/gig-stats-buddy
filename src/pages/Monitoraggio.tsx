@@ -330,14 +330,26 @@ const Monitoraggio = () => {
         let totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
         let totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
 
-        // For CF14: compute total as (live now) - (baseline at period start)
+        // For CF14: use live data when possible
+        // - If baseline snapshot exists: total = live - baseline (accurate for any period)
+        // - If no baseline but period starts before/at sale cycle start: total = live (all sales are in-period)
+        // - If no baseline and period starts after sale cycle: keep delta sum (best available)
         if (ed.key === 'CF14' && cf14RangeIncludesToday) {
           const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
           if (liveEvents.length > 0) {
             const liveBiglietti = liveEvents.reduce((s, e) => s + e.ticketsSold, 0);
             const livePresenze = liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0);
-            totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
-            totalPresenze = livePresenze - cf14Baseline.presenze;
+
+            if (cf14Baseline !== null) {
+              // Have a real baseline → accurate period calculation
+              totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
+              totalPresenze = livePresenze - cf14Baseline.presenze;
+            } else if (periodStartsBeforeSales) {
+              // Period covers entire sale cycle → live total = period total
+              totalBiglietti = liveBiglietti;
+              totalPresenze = livePresenze;
+            }
+            // else: no baseline, period starts mid-cycle → keep delta sum from snapshots
           }
         }
 
