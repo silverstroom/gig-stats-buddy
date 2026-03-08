@@ -156,7 +156,7 @@ const Monitoraggio = () => {
     const dayBefore = format(addDays(new Date(edFrom), -1), 'yyyy-MM-dd');
 
     const allSnapshots = await fetchAllTicketSnapshots(dayBefore, edTo);
-    const snapshots = allSnapshots.filter(s => isColorFestEvent(s.event_name || ''));
+    const snapshots = allSnapshots.filter(s => isCF14Event(s.event_name || ''));
     if (snapshots.length === 0) return [];
 
     const byDate = new Map<string, Map<string, { sold: number; eventName: string }>>();
