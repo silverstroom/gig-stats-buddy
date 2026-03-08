@@ -197,7 +197,7 @@ const Monitoraggio = () => {
       }
     }
 
-    const currentEvents = eventsRef.current.filter(e => isColorFestEvent(e.name));
+    const currentEvents = eventsRef.current.filter(e => isCF14Event(e.name));
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
 
     if (todayStr >= edFrom && todayStr <= edTo && currentEvents.length > 0) {
