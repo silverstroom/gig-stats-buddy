@@ -38,7 +38,7 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
       <img
         src={logoBlack}
         alt="Loading"
-        className={`${logoSize} object-contain drop-shadow-lg`}
+        className={`${logoSize} object-contain drop-shadow-lg dark:invert`}
         style={{ animation: 'rockPulse 0.6s ease-in-out infinite alternate' }}
       />
 
