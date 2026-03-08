@@ -149,7 +149,7 @@ const Index = () => {
               variant="outline"
               size="icon"
               className="rounded-2xl h-10 w-10 shadow-sm">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin-bounce' : ''}`} />
             </Button>
           </div>
         </div>
