@@ -345,7 +345,7 @@ const Monitoraggio = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedDates, computeCF14SnapshotDeltas]);
+  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline]);
 
   useEffect(() => {
     if (hasData) fetchComparison();
