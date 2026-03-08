@@ -14,7 +14,8 @@ const SOLD_COLORS = [
   'hsl(280, 60%, 55%)',
 ];
 
-const REMAINING_COLOR = 'hsl(40, 20%, 88%)';
+const REMAINING_COLOR_LIGHT = 'hsl(40, 20%, 88%)';
+const REMAINING_COLOR_DARK = 'hsl(222, 16%, 25%)';
 
 function getStoredCapacities(days: string[]): Record<string, number> {
   try {
