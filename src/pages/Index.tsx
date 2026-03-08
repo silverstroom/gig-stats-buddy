@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -149,7 +150,7 @@ const Index = () => {
               variant="outline"
               size="icon"
               className="rounded-2xl h-10 w-10 shadow-sm">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin-bounce' : ''}`} />
             </Button>
           </div>
         </div>
@@ -184,7 +185,7 @@ const Index = () => {
         {/* Loading */}
         {loading &&
         <div className="flex items-center justify-center py-16">
-            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+            <LoadingSpinner />
           </div>
         }
 

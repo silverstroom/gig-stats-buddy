@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Target, Edit3, Check, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -83,7 +84,7 @@ const Obiettivo = () => {
             size="icon"
             className="rounded-2xl h-10 w-10 shadow-sm"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin-bounce' : ''}`} />
           </Button>
         </div>
       </header>
@@ -120,7 +121,7 @@ const Obiettivo = () => {
           <h2 className="text-base font-bold text-center mb-2">Stato di Avanzamento</h2>
           {loading ? (
             <div className="w-64 h-64 flex items-center justify-center mx-auto">
-              <Target className="w-8 h-8 animate-spin text-primary" />
+              <LoadingSpinner />
             </div>
           ) : (
             <>

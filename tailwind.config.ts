@@ -75,25 +75,31 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "spin-bounce": {
+          "0%": { transform: "rotate(0deg) scale(1)", opacity: "1" },
+          "25%": { transform: "rotate(180deg) scale(1.2)", opacity: "0.7" },
+          "50%": { transform: "rotate(360deg) scale(1)", opacity: "1" },
+          "75%": { transform: "rotate(540deg) scale(1.15)", opacity: "0.8" },
+          "100%": { transform: "rotate(720deg) scale(1)", opacity: "1" },
+        },
+        "pulse-ring": {
+          "0%": { transform: "scale(1)", opacity: "0.6" },
+          "50%": { transform: "scale(1.8)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "spin-bounce": "spin-bounce 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "pulse-ring": "pulse-ring 1.4s cubic-bezier(0, 0, 0.2, 1) infinite",
       },
     },
   },
