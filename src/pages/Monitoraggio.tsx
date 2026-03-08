@@ -243,6 +243,34 @@ const Monitoraggio = () => {
     return deltas;
   }, [fetchAllTicketSnapshots]);
 
+  // Fetch the CF14 baseline (total sold) at or before a given date
+  const fetchCF14Baseline = useCallback(async (beforeDate: string): Promise<{ biglietti: number; presenze: number }> => {
+    const { data } = await supabase
+      .from('ticket_snapshots')
+      .select('event_id, event_name, tickets_sold')
+      .lte('snapshot_date', beforeDate)
+      .order('snapshot_date', { ascending: false })
+      .limit(200);
+
+    if (!data || data.length === 0) return { biglietti: 0, presenze: 0 };
+
+    // Deduplicate: keep latest snapshot per event_id, only CF14
+    const seen = new Map<string, { sold: number; name: string }>();
+    for (const s of data) {
+      if (s.event_id && !seen.has(s.event_id) && isCF14Event(s.event_name || '')) {
+        seen.set(s.event_id, { sold: s.tickets_sold, name: s.event_name || '' });
+      }
+    }
+
+    let biglietti = 0;
+    let presenze = 0;
+    for (const [, ev] of seen) {
+      biglietti += ev.sold;
+      presenze += ev.sold * getPresenzeMultiplier(ev.name);
+    }
+    return { biglietti, presenze };
+  }, []);
+
   const fetchComparison = useCallback(async () => {
     setLoading(true);
     try {
@@ -260,22 +288,22 @@ const Monitoraggio = () => {
       const globalFrom = allEdFromTo.reduce((min, e) => e.from < min ? e.from : min, allEdFromTo[0].from);
       const globalTo = allEdFromTo.reduce((max, e) => e.to > max ? e.to : max, allEdFromTo[0].to);
 
-      const [{ data: allHistorical }, cf14Deltas] = await Promise.all([
+      const cf14Dates = allEdFromTo.find(e => e.key === 'CF14')!;
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
+      const cf14RangeIncludesToday = todayStr >= cf14Dates.from && todayStr <= cf14Dates.to;
+
+      const [{ data: allHistorical }, cf14Deltas, cf14Baseline] = await Promise.all([
         supabase
           .from('historical_daily_presenze')
           .select('edition_key, sale_date, presenze_delta, tickets_delta')
           .gte('sale_date', globalFrom)
           .lte('sale_date', globalTo)
           .order('sale_date'),
-        computeCF14SnapshotDeltas(
-          allEdFromTo.find(e => e.key === 'CF14')!.from,
-          allEdFromTo.find(e => e.key === 'CF14')!.to
-        ),
+        computeCF14SnapshotDeltas(cf14Dates.from, cf14Dates.to),
+        cf14RangeIncludesToday
+          ? fetchCF14Baseline(format(addDays(new Date(cf14Dates.from), -1), 'yyyy-MM-dd'))
+          : Promise.resolve({ biglietti: 0, presenze: 0 }),
       ]);
-
-      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
-      const cf14Dates = allEdFromTo.find(e => e.key === 'CF14')!;
-      const cf14RangeIncludesToday = todayStr >= cf14Dates.from && todayStr <= cf14Dates.to;
 
       const results = EDITIONS.map((ed) => {
         const edDates = allEdFromTo.find(e => e.key === ed.key)!;
@@ -297,19 +325,13 @@ const Monitoraggio = () => {
         let totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
 
         // For CF14: compute total as (live now) - (baseline at period start)
-        // This correctly filters by period regardless of snapshot coverage
         if (ed.key === 'CF14' && cf14RangeIncludesToday) {
           const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
           if (liveEvents.length > 0) {
             const liveBiglietti = liveEvents.reduce((s, e) => s + e.ticketsSold, 0);
             const livePresenze = liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0);
-            
-            // Find baseline: latest snapshot on or before period start
-            const periodStart = cf14Dates.from;
-            const baselineSnapshot = await fetchCF14Baseline(periodStart);
-            
-            totalBiglietti = liveBiglietti - baselineSnapshot.biglietti;
-            totalPresenze = livePresenze - baselineSnapshot.presenze;
+            totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
+            totalPresenze = livePresenze - cf14Baseline.presenze;
           }
         }
 
