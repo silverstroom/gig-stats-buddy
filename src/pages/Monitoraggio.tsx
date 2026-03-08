@@ -382,8 +382,7 @@ const Monitoraggio = () => {
               totalBiglietti = liveBiglietti;
               totalPresenze = livePresenze;
             }
-            }
-            // else: no baseline, period starts mid-cycle → keep delta sum from snapshots
+            // else: no baseline, period starts after coverage start → keep delta sum from snapshots
           }
         }
 
@@ -397,7 +396,7 @@ const Monitoraggio = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline]);
+  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline, fetchCF14FirstSnapshotDate]);
 
   useEffect(() => {
     if (hasData) fetchComparison();
