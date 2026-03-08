@@ -183,7 +183,8 @@
   }
 
   .glass-card {
-    @apply bg-card/90 backdrop-blur-xl border border-border/50 shadow-sm rounded-3xl;
+    @apply bg-card/90 backdrop-blur-xl border border-border/50 rounded-3xl;
+    box-shadow: 0 4px 16px -4px hsl(220 20% 20% / 0.08), 0 12px 32px -8px hsl(220 20% 20% / 0.1);
   }
 
   .stat-glow {
