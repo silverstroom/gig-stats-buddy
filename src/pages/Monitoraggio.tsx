@@ -244,7 +244,8 @@ const Monitoraggio = () => {
   }, [fetchAllTicketSnapshots]);
 
   // Fetch the CF14 baseline (total sold) at or before a given date
-  const fetchCF14Baseline = useCallback(async (beforeDate: string): Promise<{ biglietti: number; presenze: number }> => {
+  // Returns null if no snapshot exists before that date
+  const fetchCF14Baseline = useCallback(async (beforeDate: string): Promise<{ biglietti: number; presenze: number } | null> => {
     const { data } = await supabase
       .from('ticket_snapshots')
       .select('event_id, event_name, tickets_sold')
@@ -252,15 +253,16 @@ const Monitoraggio = () => {
       .order('snapshot_date', { ascending: false })
       .limit(200);
 
-    if (!data || data.length === 0) return { biglietti: 0, presenze: 0 };
+    if (!data || data.length === 0) return null;
 
-    // Deduplicate: keep latest snapshot per event_id, only CF14
     const seen = new Map<string, { sold: number; name: string }>();
     for (const s of data) {
       if (s.event_id && !seen.has(s.event_id) && isCF14Event(s.event_name || '')) {
         seen.set(s.event_id, { sold: s.tickets_sold, name: s.event_name || '' });
       }
     }
+
+    if (seen.size === 0) return null;
 
     let biglietti = 0;
     let presenze = 0;
