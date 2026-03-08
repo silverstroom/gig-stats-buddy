@@ -159,7 +159,7 @@ const Index = () => {
         {editions.length > 0 &&
         <div className="mt-4">
             <Select value={selectedEditionKey || ''} onValueChange={setSelectedEditionKey}>
-              <SelectTrigger className="w-full rounded-2xl bg-card border-border/40 font-semibold shadow-sm h-12">
+              <SelectTrigger className="w-fit min-w-[200px] max-w-[320px] rounded-2xl bg-card border-border/40 font-semibold shadow-sm h-10 text-sm">
                 <SelectValue placeholder="Seleziona un'edizione..." />
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
