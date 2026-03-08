@@ -304,6 +304,51 @@ const Monitoraggio = () => {
     return data?.[0]?.snapshot_date?.split('T')[0] || null;
   }, []);
 
+  const fetchCF14LiveTotalsFromSnapshots = useCallback(async (): Promise<{ biglietti: number; presenze: number } | null> => {
+    const { data: latestRows } = await supabase
+      .from('ticket_snapshots')
+      .select('snapshot_date')
+      .ilike('event_name', '%Color Fest 14%')
+      .order('snapshot_date', { ascending: false })
+      .limit(1);
+
+    const latestSnapshotDate = latestRows?.[0]?.snapshot_date?.split('T')[0];
+    if (!latestSnapshotDate) return null;
+
+    const dayStart = `${latestSnapshotDate}T00:00:00.000Z`;
+    const nextDay = format(addDays(new Date(latestSnapshotDate), 1), 'yyyy-MM-dd');
+    const dayEndExclusive = `${nextDay}T00:00:00.000Z`;
+
+    const { data: dayRows } = await supabase
+      .from('ticket_snapshots')
+      .select('event_id, event_name, tickets_sold')
+      .gte('snapshot_date', dayStart)
+      .lt('snapshot_date', dayEndExclusive)
+      .ilike('event_name', '%Color Fest 14%');
+
+    if (!dayRows || dayRows.length === 0) return null;
+
+    const seen = new Map<string, { sold: number; name: string }>();
+    for (const s of dayRows) {
+      const key = s.event_id || `name:${s.event_name || 'unknown'}`;
+      const prev = seen.get(key);
+      if (!prev || s.tickets_sold > prev.sold) {
+        seen.set(key, { sold: s.tickets_sold, name: s.event_name || '' });
+      }
+    }
+
+    if (seen.size === 0) return null;
+
+    let biglietti = 0;
+    let presenze = 0;
+    for (const [, ev] of seen) {
+      biglietti += ev.sold;
+      presenze += ev.sold * getPresenzeMultiplier(ev.name);
+    }
+
+    return { biglietti, presenze };
+  }, []);
+
   const fetchComparison = useCallback(async () => {
     setLoading(true);
     try {
@@ -325,7 +370,7 @@ const Monitoraggio = () => {
       const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
       const cf14RangeIncludesToday = todayStr >= cf14Dates.from && todayStr <= cf14Dates.to;
 
-      const [{ data: allHistorical }, cf14Deltas, cf14Baseline, cf14FirstSnapshotDate] = await Promise.all([
+      const [{ data: allHistorical }, cf14Deltas, cf14Baseline, cf14FirstSnapshotDate, cf14LiveFromSnapshots] = await Promise.all([
         supabase
           .from('historical_daily_presenze')
           .select('edition_key, sale_date, presenze_delta, tickets_delta')
@@ -338,6 +383,9 @@ const Monitoraggio = () => {
           : Promise.resolve(null),
         cf14RangeIncludesToday
           ? fetchCF14FirstSnapshotDate()
+          : Promise.resolve(null),
+        cf14RangeIncludesToday
+          ? fetchCF14LiveTotalsFromSnapshots()
           : Promise.resolve(null),
       ]);
 
