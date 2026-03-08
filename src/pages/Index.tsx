@@ -120,26 +120,17 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-32">
       {/* Header */}
-      <header className="px-5 pt-8 pb-6">
-        <div className="flex items-center justify-between">
+      <header className="px-5 pt-8 pb-5">
+        <div className="flex items-start justify-between">
           <div>
-            <img src={logoBlack} alt="Color Fest" className="h-14 dark:invert" />
-            <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-tight whitespace-nowrap mt-1.5">
-              {(() => {
-                const hour = new Date().getHours();
-                const greeting = hour < 12 ? 'Buongiorno ☀️' : hour < 18 ? 'Buon pomeriggio 🌤️' : 'Buonasera 🌙';
-                const dateStr = format(new Date(), "EEEE d MMMM", { locale: it });
-                const capitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-                return `${greeting} · ${capitalized}`;
-              })()}
-            </p>
+            <img src={logoBlack} alt="Color Fest" className="h-12 dark:invert" />
           </div>
           <div className="flex items-center gap-2">
             <Button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               variant="outline"
               size="icon"
-              className="rounded-2xl h-10 w-10 shadow-sm"
+              className="rounded-2xl h-9 w-9 shadow-sm"
               title={theme === 'dark' ? 'Modalità chiara' : 'Modalità scura'}>
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
@@ -150,7 +141,7 @@ const Index = () => {
               }}
               variant="outline"
               size="icon"
-              className="rounded-2xl h-10 w-10 shadow-sm"
+              className="rounded-2xl h-9 w-9 shadow-sm"
               title={notifEnabled ? 'Notifiche attive' : 'Attiva notifiche'}>
               {notifEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
             </Button>
@@ -159,11 +150,20 @@ const Index = () => {
               disabled={loading}
               variant="outline"
               size="icon"
-              className="rounded-2xl h-10 w-10 shadow-sm">
+              className="rounded-2xl h-9 w-9 shadow-sm">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin-bounce' : ''}`} />
             </Button>
           </div>
         </div>
+        <p className="text-[13px] text-muted-foreground font-medium mt-2">
+          {(() => {
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? 'Buongiorno ☀️' : hour < 18 ? 'Buon pomeriggio 🌤️' : 'Buonasera 🌙';
+            const dateStr = format(new Date(), "EEEE d MMMM", { locale: it });
+            const capitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+            return `${greeting}  ·  ${capitalized}`;
+          })()}
+        </p>
 
         {/* Edition Selector */}
         {editions.length > 0 &&
