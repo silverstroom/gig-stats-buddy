@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 import { Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,8 @@ const SOLD_COLORS = [
   'hsl(280, 60%, 55%)',
 ];
 
-const REMAINING_COLOR = 'hsl(40, 20%, 88%)';
+const REMAINING_COLOR_LIGHT = 'hsl(40, 20%, 88%)';
+const REMAINING_COLOR_DARK = 'hsl(222, 16%, 25%)';
 
 function getStoredCapacities(days: string[]): Record<string, number> {
   try {
@@ -32,6 +34,8 @@ function saveCapacities(caps: Record<string, number>) {
 
 export function DayBarChart({ distribution }: DayBarChartProps) {
   const [editing, setEditing] = useState(false);
+  const { theme } = useTheme();
+  const remainingColor = theme === 'dark' ? REMAINING_COLOR_DARK : REMAINING_COLOR_LIGHT;
   const [capacities, setCapacities] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -111,7 +115,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                       stroke="none"
                     >
                       <Cell fill={SOLD_COLORS[i % SOLD_COLORS.length]} />
-                      <Cell fill={REMAINING_COLOR} />
+                      <Cell fill={remainingColor} />
                       <Label
                         value={`${pct}%`}
                         position="center"
