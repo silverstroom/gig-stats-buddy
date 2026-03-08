@@ -417,18 +417,24 @@ const Monitoraggio = () => {
         // - If no baseline and range starts after coverage start: keep delta sum (best available)
         if (ed.key === 'CF14' && cf14RangeIncludesToday) {
           const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
-          if (liveEvents.length > 0) {
-            const liveBiglietti = liveEvents.reduce((s, e) => s + e.ticketsSold, 0);
-            const livePresenze = liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0);
+          const liveFromApi = liveEvents.length > 0
+            ? {
+                biglietti: liveEvents.reduce((s, e) => s + e.ticketsSold, 0),
+                presenze: liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0),
+              }
+            : null;
 
+          const liveTotals = liveFromApi ?? cf14LiveFromSnapshots;
+
+          if (liveTotals) {
             if (cf14Baseline !== null) {
               // Have a real baseline → accurate period calculation
-              totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
-              totalPresenze = livePresenze - cf14Baseline.presenze;
+              totalBiglietti = Math.max(0, liveTotals.biglietti - cf14Baseline.biglietti);
+              totalPresenze = Math.max(0, liveTotals.presenze - cf14Baseline.presenze);
             } else if (rangeStartsBeforeSnapshotCoverage) {
-              // No reliable baseline before period start → use API live total
-              totalBiglietti = liveBiglietti;
-              totalPresenze = livePresenze;
+              // No reliable baseline before period start → use live total
+              totalBiglietti = liveTotals.biglietti;
+              totalPresenze = liveTotals.presenze;
             }
             // else: no baseline, period starts after coverage start → keep delta sum from snapshots
           }
