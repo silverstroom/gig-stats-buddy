@@ -244,7 +244,8 @@ const Monitoraggio = () => {
   }, [fetchAllTicketSnapshots]);
 
   // Fetch the CF14 baseline (total sold) at or before a given date
-  const fetchCF14Baseline = useCallback(async (beforeDate: string): Promise<{ biglietti: number; presenze: number }> => {
+  // Returns null if no snapshot exists before that date
+  const fetchCF14Baseline = useCallback(async (beforeDate: string): Promise<{ biglietti: number; presenze: number } | null> => {
     const { data } = await supabase
       .from('ticket_snapshots')
       .select('event_id, event_name, tickets_sold')
@@ -252,15 +253,16 @@ const Monitoraggio = () => {
       .order('snapshot_date', { ascending: false })
       .limit(200);
 
-    if (!data || data.length === 0) return { biglietti: 0, presenze: 0 };
+    if (!data || data.length === 0) return null;
 
-    // Deduplicate: keep latest snapshot per event_id, only CF14
     const seen = new Map<string, { sold: number; name: string }>();
     for (const s of data) {
       if (s.event_id && !seen.has(s.event_id) && isCF14Event(s.event_name || '')) {
         seen.set(s.event_id, { sold: s.tickets_sold, name: s.event_name || '' });
       }
     }
+
+    if (seen.size === 0) return null;
 
     let biglietti = 0;
     let presenze = 0;
@@ -302,8 +304,12 @@ const Monitoraggio = () => {
         computeCF14SnapshotDeltas(cf14Dates.from, cf14Dates.to),
         cf14RangeIncludesToday
           ? fetchCF14Baseline(format(addDays(new Date(cf14Dates.from), -1), 'yyyy-MM-dd'))
-          : Promise.resolve({ biglietti: 0, presenze: 0 }),
+          : Promise.resolve(null),
       ]);
+
+      // CF14 sale cycle starts Sep 1 of prior year
+      const cf14SaleCycleStart = '2025-09-01';
+      const periodStartsBeforeSales = cf14Dates.from <= cf14SaleCycleStart;
 
       const results = EDITIONS.map((ed) => {
         const edDates = allEdFromTo.find(e => e.key === ed.key)!;
@@ -324,14 +330,26 @@ const Monitoraggio = () => {
         let totalPresenze = dailyData.reduce((s, d) => s + d.presenze_delta, 0);
         let totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
 
-        // For CF14: compute total as (live now) - (baseline at period start)
+        // For CF14: use live data when possible
+        // - If baseline snapshot exists: total = live - baseline (accurate for any period)
+        // - If no baseline but period starts before/at sale cycle start: total = live (all sales are in-period)
+        // - If no baseline and period starts after sale cycle: keep delta sum (best available)
         if (ed.key === 'CF14' && cf14RangeIncludesToday) {
           const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
           if (liveEvents.length > 0) {
             const liveBiglietti = liveEvents.reduce((s, e) => s + e.ticketsSold, 0);
             const livePresenze = liveEvents.reduce((s, e) => s + e.ticketsSold * getPresenzeMultiplier(e.name), 0);
-            totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
-            totalPresenze = livePresenze - cf14Baseline.presenze;
+
+            if (cf14Baseline !== null) {
+              // Have a real baseline → accurate period calculation
+              totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
+              totalPresenze = livePresenze - cf14Baseline.presenze;
+            } else if (periodStartsBeforeSales) {
+              // Period covers entire sale cycle → live total = period total
+              totalBiglietti = liveBiglietti;
+              totalPresenze = livePresenze;
+            }
+            // else: no baseline, period starts mid-cycle → keep delta sum from snapshots
           }
         }
 
