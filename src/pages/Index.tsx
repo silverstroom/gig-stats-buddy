@@ -184,7 +184,7 @@ const Index = () => {
         {/* Loading */}
         {loading &&
         <div className="flex items-center justify-center py-16">
-            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+            <LoadingSpinner />
           </div>
         }
 

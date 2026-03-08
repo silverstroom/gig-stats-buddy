@@ -612,7 +612,7 @@ const Monitoraggio = () => {
         {/* Loading */}
         {loading && (
           <div className="flex justify-center py-12">
-            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+            <LoadingSpinner />
           </div>
         )}
 

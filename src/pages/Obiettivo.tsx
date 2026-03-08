@@ -120,7 +120,7 @@ const Obiettivo = () => {
           <h2 className="text-base font-bold text-center mb-2">Stato di Avanzamento</h2>
           {loading ? (
             <div className="w-64 h-64 flex items-center justify-center mx-auto">
-              <Target className="w-8 h-8 animate-spin text-primary" />
+              <LoadingSpinner />
             </div>
           ) : (
             <>
