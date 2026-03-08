@@ -450,11 +450,17 @@ const Monitoraggio = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline, fetchCF14FirstSnapshotDate]);
+  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline, fetchCF14FirstSnapshotDate, fetchCF14LiveTotalsFromSnapshots]);
 
   useEffect(() => {
     if (hasData) fetchComparison();
   }, [hasData, fetchComparison]);
+
+  useEffect(() => {
+    if (hasData && events.length > 0) {
+      fetchComparison();
+    }
+  }, [events.length, hasData, fetchComparison]);
 
   const dateLabel = useMemo(() => {
     const { from, to } = selectedDates;
