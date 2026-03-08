@@ -129,17 +129,29 @@ const Index = () => {
                 return `${greeting} · ${capitalized}`;
               })()}
             </p>
-            <img src={logoBlack} alt="Color Fest" className="h-10 mt-1 dark:invert" />
+            <img src={logoBlack} alt="Color Fest" className="h-14 mt-1 dark:invert" />
           </div>
-          <Button
-            onClick={fetchEvents}
-            disabled={loading}
-            variant="outline"
-            size="icon"
-            className="rounded-2xl h-10 w-10 shadow-sm">
-            
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={async () => {
+                const granted = await requestPermission();
+                setNotifEnabled(granted);
+              }}
+              variant="outline"
+              size="icon"
+              className="rounded-2xl h-10 w-10 shadow-sm"
+              title={notifEnabled ? 'Notifiche attive' : 'Attiva notifiche'}>
+              {notifEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
+            </Button>
+            <Button
+              onClick={fetchEvents}
+              disabled={loading}
+              variant="outline"
+              size="icon"
+              className="rounded-2xl h-10 w-10 shadow-sm">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
 
         {/* Edition Selector */}
