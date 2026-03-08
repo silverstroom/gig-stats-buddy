@@ -32,7 +32,7 @@ export function BottomNav() {
               
               <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-200',
-                isActive && 'bg-background/15'
+                isActive && 'bg-white/20'
               )}>
                 <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.8} />
               </div>
