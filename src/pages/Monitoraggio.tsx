@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { CalendarDays, CalendarRange, TrendingUp, TrendingDown, Upload, ArrowRightLeft, RefreshCw, Ticket, Users } from 'lucide-react';
 import { format, addDays, addYears, isSameDay, eachDayOfInterval, subDays, subMonths, startOfMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
