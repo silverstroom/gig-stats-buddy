@@ -96,7 +96,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
           return (
             <div key={d.date} className="flex flex-col items-center">
               <p className="text-xs sm:text-sm font-bold mb-1 sm:mb-2">{d.day}</p>
-              <div className="h-[100px] w-[100px] sm:h-[160px] sm:w-[160px]">
+              <div className="h-[100px] w-[100px] sm:h-[160px] sm:w-[160px] text-foreground">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -116,7 +116,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                         value={`${pct}%`}
                         position="center"
                         style={{
-                          fill: 'hsl(220, 25%, 10%)',
+                          fill: 'currentColor',
                           fontSize: '16px',
                           fontWeight: 800,
                           fontFamily: 'JetBrains Mono',
