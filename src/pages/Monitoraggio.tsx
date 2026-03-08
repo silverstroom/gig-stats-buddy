@@ -42,6 +42,10 @@ function isColorFestEvent(eventName: string): boolean {
   return /color\s*fest\s*\d/i.test(eventName);
 }
 
+function isCF14Event(eventName: string): boolean {
+  return /color\s*fest\s*14/i.test(eventName);
+}
+
 function getPresenzeMultiplier(eventName: string): number {
   if (/2\s*days?/i.test(eventName)) return 2;
   if (/(abbonamento|full)/i.test(eventName) && !/1\s*day|one\s*day/i.test(eventName)) return 3;
