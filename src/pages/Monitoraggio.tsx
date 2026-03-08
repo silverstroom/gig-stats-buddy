@@ -304,8 +304,12 @@ const Monitoraggio = () => {
         computeCF14SnapshotDeltas(cf14Dates.from, cf14Dates.to),
         cf14RangeIncludesToday
           ? fetchCF14Baseline(format(addDays(new Date(cf14Dates.from), -1), 'yyyy-MM-dd'))
-          : Promise.resolve({ biglietti: 0, presenze: 0 }),
+          : Promise.resolve(null),
       ]);
+
+      // CF14 sale cycle starts Sep 1 of prior year
+      const cf14SaleCycleStart = '2025-09-01';
+      const periodStartsBeforeSales = cf14Dates.from <= cf14SaleCycleStart;
 
       const results = EDITIONS.map((ed) => {
         const edDates = allEdFromTo.find(e => e.key === ed.key)!;
