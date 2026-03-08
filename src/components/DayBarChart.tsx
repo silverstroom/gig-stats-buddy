@@ -34,7 +34,8 @@ function saveCapacities(caps: Record<string, number>) {
 
 export function DayBarChart({ distribution }: DayBarChartProps) {
   const [editing, setEditing] = useState(false);
-  const [capacities, setCapacities] = useState<Record<string, number>>({});
+  const { theme } = useTheme();
+  const remainingColor = theme === 'dark' ? REMAINING_COLOR_DARK : REMAINING_COLOR_LIGHT;
 
   useEffect(() => {
     if (distribution.length > 0) {
