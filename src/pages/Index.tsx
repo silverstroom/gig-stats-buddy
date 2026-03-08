@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff } from 'lucide-react';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', '
 const Index = () => {
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const { requestPermission } = useTicketNotifications(events);
+  const { theme, setTheme } = useTheme();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
   const [notifEnabled, setNotifEnabled] = useState(() => 
     'Notification' in window && Notification.permission === 'granted'
@@ -133,6 +135,14 @@ const Index = () => {
             <img src={logoBlack} alt="Color Fest" className="h-14 mt-1 dark:invert" />
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              variant="outline"
+              size="icon"
+              className="rounded-2xl h-10 w-10 shadow-sm"
+              title={theme === 'dark' ? 'Modalità chiara' : 'Modalità scura'}>
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
             <Button
               onClick={async () => {
                 const granted = await requestPermission();
