@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import logoBlack from '@/assets/logo_black.png';
 import { Progress } from '@/components/ui/progress';
-import { Guitar, Zap } from 'lucide-react';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md';
