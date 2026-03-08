@@ -243,22 +243,41 @@ const Monitoraggio = () => {
     return deltas;
   }, [fetchAllTicketSnapshots]);
 
-  // Fetch the CF14 baseline (total sold) at or before a given date
+  // Fetch the CF14 baseline (total sold) using the latest available snapshot day <= beforeDate
   // Returns null if no snapshot exists before that date
   const fetchCF14Baseline = useCallback(async (beforeDate: string): Promise<{ biglietti: number; presenze: number } | null> => {
-    const { data } = await supabase
+    const beforeDateEnd = `${beforeDate}T23:59:59.999Z`;
+
+    const { data: latestRows } = await supabase
+      .from('ticket_snapshots')
+      .select('snapshot_date')
+      .lte('snapshot_date', beforeDateEnd)
+      .order('snapshot_date', { ascending: false })
+      .limit(1);
+
+    const latestSnapshotDate = latestRows?.[0]?.snapshot_date?.split('T')[0];
+    if (!latestSnapshotDate) return null;
+
+    const dayStart = `${latestSnapshotDate}T00:00:00.000Z`;
+    const nextDay = format(addDays(new Date(latestSnapshotDate), 1), 'yyyy-MM-dd');
+    const dayEndExclusive = `${nextDay}T00:00:00.000Z`;
+
+    const { data: dayRows } = await supabase
       .from('ticket_snapshots')
       .select('event_id, event_name, tickets_sold')
-      .lte('snapshot_date', beforeDate)
-      .order('snapshot_date', { ascending: false })
-      .limit(200);
+      .gte('snapshot_date', dayStart)
+      .lt('snapshot_date', dayEndExclusive);
 
-    if (!data || data.length === 0) return null;
+    if (!dayRows || dayRows.length === 0) return null;
 
     const seen = new Map<string, { sold: number; name: string }>();
-    for (const s of data) {
-      if (s.event_id && !seen.has(s.event_id) && isCF14Event(s.event_name || '')) {
-        seen.set(s.event_id, { sold: s.tickets_sold, name: s.event_name || '' });
+    for (const s of dayRows) {
+      if (!isCF14Event(s.event_name || '')) continue;
+
+      const key = s.event_id || `name:${s.event_name || 'unknown'}`;
+      const prev = seen.get(key);
+      if (!prev || s.tickets_sold > prev.sold) {
+        seen.set(key, { sold: s.tickets_sold, name: s.event_name || '' });
       }
     }
 
@@ -270,7 +289,19 @@ const Monitoraggio = () => {
       biglietti += ev.sold;
       presenze += ev.sold * getPresenzeMultiplier(ev.name);
     }
+
     return { biglietti, presenze };
+  }, []);
+
+  const fetchCF14FirstSnapshotDate = useCallback(async (): Promise<string | null> => {
+    const { data } = await supabase
+      .from('ticket_snapshots')
+      .select('snapshot_date')
+      .ilike('event_name', '%Color Fest 14%')
+      .order('snapshot_date', { ascending: true })
+      .limit(1);
+
+    return data?.[0]?.snapshot_date?.split('T')[0] || null;
   }, []);
 
   const fetchComparison = useCallback(async () => {
@@ -294,7 +325,7 @@ const Monitoraggio = () => {
       const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' });
       const cf14RangeIncludesToday = todayStr >= cf14Dates.from && todayStr <= cf14Dates.to;
 
-      const [{ data: allHistorical }, cf14Deltas, cf14Baseline] = await Promise.all([
+      const [{ data: allHistorical }, cf14Deltas, cf14Baseline, cf14FirstSnapshotDate] = await Promise.all([
         supabase
           .from('historical_daily_presenze')
           .select('edition_key, sale_date, presenze_delta, tickets_delta')
@@ -305,11 +336,13 @@ const Monitoraggio = () => {
         cf14RangeIncludesToday
           ? fetchCF14Baseline(format(addDays(new Date(cf14Dates.from), -1), 'yyyy-MM-dd'))
           : Promise.resolve(null),
+        cf14RangeIncludesToday
+          ? fetchCF14FirstSnapshotDate()
+          : Promise.resolve(null),
       ]);
 
-      // CF14 sale cycle starts Sep 1 of prior year
-      const cf14SaleCycleStart = '2025-09-01';
-      const periodStartsBeforeSales = cf14Dates.from <= cf14SaleCycleStart;
+      const rangeStartsBeforeSnapshotCoverage =
+        cf14FirstSnapshotDate === null || cf14Dates.from <= cf14FirstSnapshotDate;
 
       const results = EDITIONS.map((ed) => {
         const edDates = allEdFromTo.find(e => e.key === ed.key)!;
@@ -331,9 +364,9 @@ const Monitoraggio = () => {
         let totalBiglietti = dailyData.reduce((s, d) => s + d.tickets_delta, 0);
 
         // For CF14: use live data when possible
-        // - If baseline snapshot exists: total = live - baseline (accurate for any period)
-        // - If no baseline but period starts before/at sale cycle start: total = live (all sales are in-period)
-        // - If no baseline and period starts after sale cycle: keep delta sum (best available)
+        // - If baseline snapshot exists: total = live - baseline (accurate period delta)
+        // - If no baseline and range starts before snapshot coverage: use live total
+        // - If no baseline and range starts after coverage start: keep delta sum (best available)
         if (ed.key === 'CF14' && cf14RangeIncludesToday) {
           const liveEvents = eventsRef.current.filter(e => isCF14Event(e.name));
           if (liveEvents.length > 0) {
@@ -344,12 +377,12 @@ const Monitoraggio = () => {
               // Have a real baseline → accurate period calculation
               totalBiglietti = liveBiglietti - cf14Baseline.biglietti;
               totalPresenze = livePresenze - cf14Baseline.presenze;
-            } else if (periodStartsBeforeSales) {
-              // Period covers entire sale cycle → live total = period total
+            } else if (rangeStartsBeforeSnapshotCoverage) {
+              // No reliable baseline before period start → use API live total
               totalBiglietti = liveBiglietti;
               totalPresenze = livePresenze;
             }
-            // else: no baseline, period starts mid-cycle → keep delta sum from snapshots
+            // else: no baseline, period starts after coverage start → keep delta sum from snapshots
           }
         }
 
@@ -363,7 +396,7 @@ const Monitoraggio = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline]);
+  }, [selectedDates, computeCF14SnapshotDeltas, fetchCF14Baseline, fetchCF14FirstSnapshotDate]);
 
   useEffect(() => {
     if (hasData) fetchComparison();
