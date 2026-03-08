@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 import { Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
