@@ -32,6 +32,7 @@ const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', '
 const Index = () => {
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const { requestPermission } = useTicketNotifications(events);
+  const { theme, setTheme } = useTheme();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
   const [notifEnabled, setNotifEnabled] = useState(() => 
     'Notification' in window && Notification.permission === 'granted'
