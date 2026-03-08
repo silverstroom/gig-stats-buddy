@@ -155,7 +155,7 @@ const Index = () => {
             </Button>
           </div>
         </div>
-        <p className="text-[13px] text-muted-foreground font-medium mt-2">
+        <p className="text-sm text-foreground/70 dark:text-foreground/80 font-semibold mt-3 tracking-tight">
           {(() => {
             const hour = new Date().getHours();
             const greeting = hour < 12 ? 'Buongiorno ☀️' : hour < 18 ? 'Buon pomeriggio 🌤️' : 'Buonasera 🌙';
