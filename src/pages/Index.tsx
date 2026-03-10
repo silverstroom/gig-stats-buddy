@@ -183,7 +183,10 @@ const Index = () => {
               {notifEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
             </Button>
             <Button
-              onClick={fetchEvents}
+              onClick={() => {
+                haptics.light();
+                handleRefresh();
+              }}
               disabled={loading}
               variant="outline"
               size="icon"
