@@ -717,7 +717,7 @@ const Monitoraggio = () => {
 
             {/* Line Chart */}
             {lineChartData.length > 1 && (
-              <div className="soft-card p-4">
+              <div className="glass p-4">
                 <h3 className="text-sm font-bold mb-3">Andamento cumulativo</h3>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={lineChartData}>
