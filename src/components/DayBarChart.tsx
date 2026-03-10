@@ -15,8 +15,8 @@ const SOLD_COLORS = [
   'hsl(225, 100%, 50%)',
 ];
 
-const REMAINING_COLOR_LIGHT = 'hsl(40, 20%, 88%)';
-const REMAINING_COLOR_DARK = 'hsl(222, 16%, 25%)';
+const REMAINING_COLOR_LIGHT = 'hsl(220, 10%, 92%)';
+const REMAINING_COLOR_DARK = 'hsl(225, 12%, 22%)';
 
 function getStoredCapacities(days: string[]): Record<string, number> {
   try {
@@ -53,21 +53,21 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
   };
 
   return (
-    <div className="soft-card-yellow p-5">
+    <div className="glass-yellow p-5">
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-bold text-base">Distribuzione Presenze</h3>
         <button
           onClick={() => setEditing(!editing)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors glass-button px-2.5 py-1.5"
         >
-          <Settings2 className="w-4 h-4" />
+          <Settings2 className="w-3.5 h-3.5" />
           {editing ? 'Chiudi' : 'Capacità'}
         </button>
       </div>
       <p className="text-[11px] text-muted-foreground mb-5">Venduti vs capacità massima</p>
 
       {editing && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 p-3 rounded-2xl bg-background/50">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 p-3 rounded-2xl glass-subtle">
           {distribution.map((d) => (
             <div key={d.date} className="flex items-center gap-2">
               <label className="text-xs font-semibold text-muted-foreground whitespace-nowrap min-w-[50px]">
@@ -78,7 +78,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                 min={1}
                 value={capacities[d.date] || 2000}
                 onChange={(e) => updateCapacity(d.date, parseInt(e.target.value) || 1)}
-                className="h-8 text-sm font-mono rounded-xl"
+                className="h-8 text-sm font-mono rounded-xl glass-input"
               />
             </div>
           ))}
@@ -122,7 +122,7 @@ export function DayBarChart({ distribution }: DayBarChartProps) {
                         style={{
                           fill: 'currentColor',
                           fontSize: '16px',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           fontFamily: 'JetBrains Mono',
                         }}
                       />

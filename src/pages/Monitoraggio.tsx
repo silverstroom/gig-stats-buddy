@@ -505,14 +505,14 @@ const Monitoraggio = () => {
     }));
   }, [editionResults]);
 
-  const CARD_STYLES_MON = ['soft-card-blue', 'soft-card-yellow', 'soft-card-purple', 'soft-card-mint', 'soft-card-pink'];
+  const CARD_STYLES_MON = ['glass-blue', 'glass-yellow', 'glass-purple', 'glass-mint', 'glass-pink'];
 
   return (
     <div className="min-h-screen bg-background pb-32">
       {/* Header */}
       <header className="px-5 pt-8 pb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-primary/10">
+          <div className="p-2.5 rounded-2xl glass-subtle">
             <ArrowRightLeft className="w-6 h-6 text-primary" />
           </div>
           <div>
@@ -525,7 +525,7 @@ const Monitoraggio = () => {
       <main className="px-5 space-y-4">
         {/* Import Section */}
         {hasData === false && (
-          <div className="soft-card-orange p-6 text-center space-y-4">
+          <div className="glass-orange p-6 text-center space-y-4">
             <Upload className="w-10 h-10 text-primary mx-auto" />
             <h3 className="text-base font-bold">Importa dati storici</h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
@@ -547,7 +547,7 @@ const Monitoraggio = () => {
 
         {/* Date Controls - Redesigned */}
         {hasData && (
-          <div className="soft-card p-4 space-y-3">
+          <div className="glass p-4 space-y-3">
             {/* Preset chips */}
             <div className="flex flex-wrap gap-2">
               {PRESETS.map((preset, idx) => (
@@ -556,8 +556,8 @@ const Monitoraggio = () => {
                   onClick={() => handlePresetClick(idx)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                     activePreset === idx
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                      ? 'glass-chip-active'
+                      : 'glass-chip hover:bg-foreground/[0.06]'
                   }`}
                 >
                   {preset.label}
@@ -568,8 +568,8 @@ const Monitoraggio = () => {
                   <button
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                       activePreset === -1
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                        ? 'glass-chip-active'
+                        : 'glass-chip hover:bg-foreground/[0.06]'
                     }`}
                   >
                     <CalendarRange className="w-3 h-3" />
@@ -686,7 +686,7 @@ const Monitoraggio = () => {
             </div>
 
             {/* Bar Chart */}
-            <div className="soft-card p-4">
+            <div className="glass p-4">
               <h3 className="text-sm font-bold mb-3">Confronto diretto</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={barChartData}>
@@ -717,7 +717,7 @@ const Monitoraggio = () => {
 
             {/* Line Chart */}
             {lineChartData.length > 1 && (
-              <div className="soft-card p-4">
+              <div className="glass p-4">
                 <h3 className="text-sm font-bold mb-3">Andamento cumulativo</h3>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={lineChartData}>
@@ -752,14 +752,14 @@ const Monitoraggio = () => {
             )}
 
             {/* Summary Table */}
-            <div className="soft-card overflow-hidden">
-              <div className="p-4 border-b border-border/30">
+            <div className="glass overflow-hidden">
+              <div className="p-4 border-b border-foreground/[0.06]">
                 <h3 className="text-sm font-bold">Riepilogo</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border/30">
+                    <tr className="border-b border-foreground/[0.06]">
                       <th className="text-left py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Edizione</th>
                       <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Biglietti</th>
                       <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Presenze</th>
@@ -772,7 +772,7 @@ const Monitoraggio = () => {
                         ? ((cf14TotalPresenze - result.totalPresenze) / result.totalPresenze * 100)
                         : null;
                       return (
-                        <tr key={result.edition.key} className="border-b border-border/20">
+                        <tr key={result.edition.key} className="border-b border-foreground/[0.04]">
                           <td className="py-2 px-3 font-semibold text-xs flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: result.edition.color }} />
                             {result.edition.label}
@@ -801,7 +801,7 @@ const Monitoraggio = () => {
         )}
 
         {!loading && editionResults.length === 0 && hasData && (
-          <div className="soft-card p-10 text-center">
+          <div className="glass p-10 text-center">
             <ArrowRightLeft className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground text-sm">
               Seleziona un periodo e premi "Confronta".

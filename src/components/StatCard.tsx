@@ -31,7 +31,6 @@ function useAnimatedNumber(target: number, duration = 900) {
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // easeOutQuart for satisfying deceleration
       const eased = 1 - Math.pow(1 - progress, 4);
       setDisplay(Math.round(from + diff * eased));
       if (progress < 1) {
@@ -57,21 +56,21 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
   const { display, flash } = useAnimatedNumber(isNumeric ? value : 0);
 
   return (
-    <div className={`${cardStyle || 'soft-card'} p-4 sm:p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-md relative overflow-hidden`}>
+    <div className={`${cardStyle || 'glass'} p-4 sm:p-5 transition-all duration-300 hover:scale-[1.02] relative overflow-hidden`}>
       {/* Flash overlay on update */}
       <div
-        className={`absolute inset-0 rounded-3xl pointer-events-none transition-opacity duration-700 ${
+        className={`absolute inset-0 rounded-[var(--radius)] pointer-events-none transition-opacity duration-700 ${
           flash ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
-          background: 'radial-gradient(ellipse at 30% 50%, hsl(var(--primary) / 0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at 30% 50%, hsl(var(--primary) / 0.1) 0%, transparent 70%)',
         }}
       />
 
       <div className="flex items-start justify-between relative">
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
-          <p className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight transition-transform duration-300 ${colorClass} ${flash ? 'scale-110' : 'scale-100'}`}
+          <p className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight transition-transform duration-300 ${colorClass} ${flash ? 'scale-110' : 'scale-100'}`}
              style={{ transformOrigin: 'left center' }}>
             {isNumeric ? display.toLocaleString('it-IT') : value}
           </p>
@@ -80,7 +79,7 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
           )}
         </div>
         {icon && (
-          <div className={`p-2.5 rounded-2xl bg-foreground/5 ${colorClass} transition-transform duration-500 ${flash ? 'scale-125 rotate-12' : 'scale-100 rotate-0'}`}>
+          <div className={`p-2.5 rounded-2xl bg-foreground/[0.04] backdrop-blur-sm ${colorClass} transition-transform duration-500 ${flash ? 'scale-125 rotate-12' : 'scale-100 rotate-0'}`}>
             {icon}
           </div>
         )}
@@ -88,7 +87,7 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
 
       {/* Today sales badge */}
       {todaySales !== null && todaySales !== undefined && (
-        <div className="mt-3 pt-3 border-t border-foreground/5 relative">
+        <div className="mt-3 pt-3 border-t border-foreground/[0.06] relative">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               {todayLabel || 'Venduti oggi'}
@@ -98,12 +97,12 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
                 +{todaySales.soldToday.toLocaleString('it-IT')}
               </span>
               {pctChange !== null && (
-                <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full backdrop-blur-sm ${
                   pctChange > 0
                     ? 'bg-green-500/10 text-green-600'
                     : pctChange < 0
                     ? 'bg-red-500/10 text-red-500'
-                    : 'bg-muted text-muted-foreground'
+                    : 'bg-muted/50 text-muted-foreground'
                 }`}>
                   {pctChange > 0 ? <TrendingUp className="w-3 h-3" /> : pctChange < 0 ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
                   {pctChange > 0 ? '+' : ''}{pctChange}%

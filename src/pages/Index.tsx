@@ -29,8 +29,8 @@ import { DailySalesBreakdown } from '@/components/DailySalesBreakdown';
 import { WeeklySalesCard } from '@/components/WeeklySalesCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', 'soft-card-mint', 'soft-card-pink'];
-const DAY_CARD_STYLES = ['soft-card-teal', 'soft-card-coral', 'soft-card-deepblue'];
+const CARD_STYLES = ['glass-blue', 'glass-yellow', 'glass-orange', 'glass-mint', 'glass-pink'];
+const DAY_CARD_STYLES = ['glass-teal', 'glass-coral', 'glass-blue'];
 const DAY_COLOR_CLASSES = ['text-[hsl(168,55%,51%)]', 'text-[hsl(5,85%,65%)]', 'text-[hsl(225,100%,50%)]'];
 
 const Index = () => {
@@ -136,7 +136,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 relative">
-      {/* Chrome-style pull-to-refresh indicator */}
+      {/* Pull-to-refresh indicator */}
       {(pullDistance > 0 || isRefreshing || isSettling) && (
         <div
           className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
@@ -149,27 +149,21 @@ const Index = () => {
           }}
         >
           <div
-            className="w-10 h-10 rounded-full bg-background flex items-center justify-center"
+            className="w-10 h-10 rounded-full flex items-center justify-center glass"
             style={{
-              boxShadow: isRefreshing
-                ? '0 3px 16px -3px hsl(var(--primary) / 0.25), 0 1px 6px -1px rgba(0,0,0,0.1)'
-                : `0 ${1 + progress * 3}px ${6 + progress * 10}px -${1 + progress * 2}px rgba(0,0,0,0.18)`,
               transform: `scale(${isSettling ? 0.2 : isRefreshing ? 1 : 0.5 + progress * 0.5})`,
-              transition: isSettling ? 'transform 0.25s ease-in, box-shadow 0.25s'
-                : isRefreshing ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s'
-                : 'box-shadow 0.1s',
-              border: `1.5px solid ${progress >= 1 || isRefreshing ? 'hsl(var(--primary) / 0.25)' : 'hsl(var(--border))'}`,
+              transition: isSettling ? 'transform 0.25s ease-in'
+                : isRefreshing ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                : 'none',
             }}
           >
             {isRefreshing ? (
-              /* Spinning state: Material-style indeterminate spinner */
               <RefreshCw
                 className="w-[18px] h-[18px] text-primary"
                 style={{ animation: 'ptr-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite' }}
                 strokeWidth={2.5}
               />
             ) : (
-              /* Pulling state: RefreshCw icon that rotates with progress */
               <RefreshCw
                 className="w-[18px] h-[18px]"
                 strokeWidth={2.5}
@@ -191,36 +185,33 @@ const Index = () => {
             <img src={logoBlack} alt="Color Fest" className="h-12 dark:invert" />
           </div>
           <div className="flex items-center gap-2">
-            <Button
+            <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              variant="outline"
-              size="icon"
-              className="rounded-2xl h-9 w-9 shadow-sm"
-              title={theme === 'dark' ? 'Modalità chiara' : 'Modalità scura'}>
+              className="glass-button h-9 w-9 flex items-center justify-center"
+              title={theme === 'dark' ? 'Modalità chiara' : 'Modalità scura'}
+            >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={async () => {
                 const granted = await requestPermission();
                 setNotifEnabled(granted);
               }}
-              variant="outline"
-              size="icon"
-              className="rounded-2xl h-9 w-9 shadow-sm"
-              title={notifEnabled ? 'Notifiche attive' : 'Attiva notifiche'}>
+              className="glass-button h-9 w-9 flex items-center justify-center"
+              title={notifEnabled ? 'Notifiche attive' : 'Attiva notifiche'}
+            >
               {notifEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={() => {
                 haptics.light();
                 handleRefresh();
               }}
               disabled={loading}
-              variant="outline"
-              size="icon"
-              className="rounded-2xl h-9 w-9 shadow-sm">
+              className="glass-button h-9 w-9 flex items-center justify-center disabled:opacity-50"
+            >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin-bounce' : ''}`} />
-            </Button>
+            </button>
           </div>
         </div>
         <p className="text-sm text-foreground/70 dark:text-foreground/80 font-semibold mt-3 tracking-tight">
@@ -237,7 +228,7 @@ const Index = () => {
         {editions.length > 0 &&
         <div className="mt-4">
             <Select value={selectedEditionKey || ''} onValueChange={setSelectedEditionKey}>
-              <SelectTrigger className="w-fit min-w-[200px] max-w-[320px] rounded-2xl bg-card border-border/40 font-semibold shadow-sm h-10 text-sm">
+              <SelectTrigger className="w-fit min-w-[200px] max-w-[320px] rounded-2xl glass-input font-semibold h-10 text-sm">
                 <SelectValue placeholder="Seleziona un'edizione..." />
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
@@ -255,7 +246,7 @@ const Index = () => {
       <main className="px-5 space-y-5">
         {/* Error State */}
         {error &&
-        <div className="soft-card-pink p-4">
+        <div className="glass-pink p-4">
             <p className="text-sm text-destructive font-medium">Errore: {error}</p>
           </div>
         }
@@ -271,14 +262,14 @@ const Index = () => {
         {selectedEdition &&
         <>
             {/* Cumulative totals — visually separated */}
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-[1.75rem] bg-foreground/[0.04] border border-foreground/10 shadow-md dark:bg-foreground/[0.06] dark:border-foreground/10">
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-[1.75rem] glass-subtle">
               <StatCard
               title="Biglietti"
               value={totalTickets}
               subtitle="Totali venduti"
               icon={<Ticket className="w-5 h-5" />}
               colorClass="text-primary"
-              cardStyle="soft-card-blue"
+              cardStyle="glass-blue"
               todaySales={
               isLatestEdition && snapshots.yesterdayBaseline ?
               { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday } :
@@ -292,7 +283,7 @@ const Index = () => {
               subtitle="Somma giornaliere"
               icon={<Users className="w-5 h-5" />}
               colorClass="text-secondary"
-              cardStyle="soft-card-yellow"
+              cardStyle="glass-yellow"
               todaySales={
               isLatestEdition && snapshots.yesterdayBaseline ?
               { soldToday: totalPresenzeSoldToday, soldYesterday: 0 } :
@@ -340,7 +331,7 @@ const Index = () => {
         }
 
         {!selectedEdition && !loading && events.length === 0 &&
-        <div className="text-center py-16 soft-card">
+        <div className="text-center py-16 glass">
             <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nessun dato disponibile</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">

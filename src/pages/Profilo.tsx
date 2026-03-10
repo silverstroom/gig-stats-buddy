@@ -5,7 +5,7 @@ const Profilo = () => {
     <div className="min-h-screen bg-background pb-32">
       <header className="px-5 pt-8 pb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-primary/10">
+          <div className="p-2.5 rounded-2xl glass-subtle">
             <User className="w-6 h-6 text-primary" />
           </div>
           <div>
@@ -16,7 +16,7 @@ const Profilo = () => {
       </header>
 
       <main className="px-5 space-y-4">
-        <div className="soft-card-blue p-5">
+        <div className="glass-blue p-5">
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-bold">Info App</h3>
@@ -41,7 +41,7 @@ const Profilo = () => {
           </div>
         </div>
 
-        <div className="soft-card p-5">
+        <div className="glass p-5">
           <div className="flex items-center gap-2 mb-3">
             <Settings className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-bold">Impostazioni</h3>
