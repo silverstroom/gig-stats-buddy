@@ -15,10 +15,10 @@ import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tool
 import { toast } from 'sonner';
 
 const EDITIONS = [
-  { key: 'CF14', label: 'CF 14', year: 2026, color: 'hsl(220, 90%, 55%)' },
-  { key: 'CF13', label: 'CF 13', year: 2025, color: 'hsl(42, 95%, 55%)' },
-  { key: 'CF12', label: 'CF 12', year: 2024, color: 'hsl(280, 60%, 55%)' },
-  { key: 'CF11', label: 'CF 11', year: 2023, color: 'hsl(160, 60%, 45%)' },
+  { key: 'CF14', label: 'CF 14', year: 2026, color: 'hsl(225, 100%, 50%)' },
+  { key: 'CF13', label: 'CF 13', year: 2025, color: 'hsl(5, 85%, 65%)' },
+  { key: 'CF12', label: 'CF 12', year: 2024, color: 'hsl(168, 55%, 51%)' },
+  { key: 'CF11', label: 'CF 11', year: 2023, color: 'hsl(47, 100%, 50%)' },
   { key: 'CF10', label: 'CF 10', year: 2022, color: 'hsl(350, 75%, 55%)' },
 ];
 

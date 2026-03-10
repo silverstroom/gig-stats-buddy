@@ -10,9 +10,9 @@ interface DayBarChartProps {
 }
 
 const SOLD_COLORS = [
-  'hsl(220, 90%, 55%)',
-  'hsl(42, 95%, 55%)',
-  'hsl(280, 60%, 55%)',
+  'hsl(168, 55%, 51%)',
+  'hsl(5, 85%, 65%)',
+  'hsl(225, 100%, 50%)',
 ];
 
 const REMAINING_COLOR_LIGHT = 'hsl(40, 20%, 88%)';

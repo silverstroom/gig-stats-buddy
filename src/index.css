@@ -138,7 +138,7 @@
   }
 
   .gradient-gold {
-    background: linear-gradient(135deg, hsl(42, 95%, 55%), hsl(35, 100%, 60%));
+    background: linear-gradient(135deg, hsl(47, 100%, 50%), hsl(42, 95%, 55%));
   }
 
   .soft-card {
@@ -196,7 +196,7 @@
   }
 
   .hero-gradient {
-    background: linear-gradient(135deg, hsl(220, 90%, 52%) 0%, hsl(220, 80%, 42%) 50%, hsl(42, 95%, 55%) 100%);
+    background: linear-gradient(135deg, hsl(225, 100%, 50%) 0%, hsl(168, 55%, 51%) 50%, hsl(5, 85%, 65%) 100%);
   }
 
   .safe-area-bottom {
