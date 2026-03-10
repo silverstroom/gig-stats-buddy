@@ -331,7 +331,7 @@ const Index = () => {
         }
 
         {!selectedEdition && !loading && events.length === 0 &&
-        <div className="text-center py-16 soft-card">
+        <div className="text-center py-16 glass">
             <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nessun dato disponibile</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
