@@ -269,7 +269,7 @@ const Index = () => {
               subtitle="Totali venduti"
               icon={<Ticket className="w-5 h-5" />}
               colorClass="text-primary"
-              cardStyle="soft-card-blue"
+              cardStyle="glass-blue"
               todaySales={
               isLatestEdition && snapshots.yesterdayBaseline ?
               { soldToday: totalTicketsSoldToday, soldYesterday: totalSoldYesterday } :
