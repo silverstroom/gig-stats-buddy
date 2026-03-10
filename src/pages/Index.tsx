@@ -44,14 +44,15 @@ const Index = () => {
   );
 
   const handleRefresh = useCallback(async () => {
-    haptics.light();
     await fetchEvents();
-    haptics.success();
-  }, [fetchEvents, haptics]);
+  }, [fetchEvents]);
 
   const { pullDistance, isRefreshing, isSettling, progress } = usePullToRefresh({
     onRefresh: handleRefresh,
     threshold: 80,
+    onProgressTick: () => haptics.tick(),        // Phase 1: tension ticks
+    onThresholdReached: () => haptics.pop(),     // Phase 2: threshold pop
+    onRefreshStart: () => haptics.confirm(),     // Phase 3: confirmation pulse
   });
 
   useEffect(() => {
