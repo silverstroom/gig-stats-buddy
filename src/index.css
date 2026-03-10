@@ -36,12 +36,12 @@
 
     --radius: 1rem;
 
-    --card-orange: 30 100% 95%;
-    --card-blue: 220 100% 96%;
-    --card-mint: 160 60% 94%;
-    --card-pink: 340 80% 95%;
-    --card-yellow: 45 100% 92%;
-    --card-purple: 280 60% 95%;
+    --card-orange: 24 80% 90%;
+    --card-blue: 215 65% 92%;
+    --card-mint: 158 45% 89%;
+    --card-pink: 345 65% 92%;
+    --card-yellow: 48 75% 87%;
+    --card-purple: 270 50% 92%;
 
     --chart-day1: 220 90% 55%;
     --chart-day2: 42 95% 55%;
@@ -92,12 +92,12 @@
     --input: 222 16% 22%;
     --ring: 220 90% 62%;
 
-    --card-orange: 30 45% 18%;
-    --card-blue: 220 45% 18%;
-    --card-mint: 160 30% 16%;
-    --card-pink: 340 35% 18%;
-    --card-yellow: 45 45% 16%;
-    --card-purple: 280 28% 18%;
+    --card-orange: 24 50% 14%;
+    --card-blue: 215 50% 15%;
+    --card-mint: 158 35% 13%;
+    --card-pink: 345 40% 14%;
+    --card-yellow: 48 45% 13%;
+    --card-purple: 270 35% 15%;
 
     --chart-day1: 220 90% 60%;
     --chart-day2: 42 95% 58%;
