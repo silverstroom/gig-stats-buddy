@@ -283,7 +283,7 @@ const Index = () => {
               subtitle="Somma giornaliere"
               icon={<Users className="w-5 h-5" />}
               colorClass="text-secondary"
-              cardStyle="soft-card-yellow"
+              cardStyle="glass-yellow"
               todaySales={
               isLatestEdition && snapshots.yesterdayBaseline ?
               { soldToday: totalPresenzeSoldToday, soldYesterday: 0 } :
