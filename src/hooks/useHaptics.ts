@@ -5,12 +5,27 @@
 export function useHaptics() {
   const canVibrate = typeof navigator !== 'undefined' && 'vibrate' in navigator;
 
+  /** Subtle tick – selection-style micro feedback */
+  const tick = () => {
+    if (canVibrate) navigator.vibrate(3);
+  };
+
   const light = () => {
     if (canVibrate) navigator.vibrate(10);
   };
 
   const medium = () => {
     if (canVibrate) navigator.vibrate(25);
+  };
+
+  /** Sharp "pop" – threshold reached */
+  const pop = () => {
+    if (canVibrate) navigator.vibrate(18);
+  };
+
+  /** Soft confirmation pulse */
+  const confirm = () => {
+    if (canVibrate) navigator.vibrate([8, 60, 8]);
   };
 
   const success = () => {
@@ -21,5 +36,5 @@ export function useHaptics() {
     if (canVibrate) navigator.vibrate([50, 30, 50, 30, 50]);
   };
 
-  return { light, medium, success, error, canVibrate };
+  return { tick, light, medium, pop, confirm, success, error, canVibrate };
 }
