@@ -35,10 +35,22 @@ const Index = () => {
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const { requestPermission } = useTicketNotifications(events);
   const { theme, setTheme } = useTheme();
+  const haptics = useHaptics();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
   const [notifEnabled, setNotifEnabled] = useState(() => 
     'Notification' in window && Notification.permission === 'granted'
   );
+
+  const handleRefresh = useCallback(async () => {
+    haptics.light();
+    await fetchEvents();
+    haptics.success();
+  }, [fetchEvents, haptics]);
+
+  const { pullDistance, isRefreshing, progress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 100,
+  });
 
   useEffect(() => {
     fetchEvents();
