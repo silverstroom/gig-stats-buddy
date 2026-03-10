@@ -136,7 +136,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 relative">
-      {/* Chrome-style pull-to-refresh indicator */}
+      {/* Pull-to-refresh indicator */}
       {(pullDistance > 0 || isRefreshing || isSettling) && (
         <div
           className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
@@ -149,27 +149,21 @@ const Index = () => {
           }}
         >
           <div
-            className="w-10 h-10 rounded-full bg-background flex items-center justify-center"
+            className="w-10 h-10 rounded-full flex items-center justify-center glass"
             style={{
-              boxShadow: isRefreshing
-                ? '0 3px 16px -3px hsl(var(--primary) / 0.25), 0 1px 6px -1px rgba(0,0,0,0.1)'
-                : `0 ${1 + progress * 3}px ${6 + progress * 10}px -${1 + progress * 2}px rgba(0,0,0,0.18)`,
               transform: `scale(${isSettling ? 0.2 : isRefreshing ? 1 : 0.5 + progress * 0.5})`,
-              transition: isSettling ? 'transform 0.25s ease-in, box-shadow 0.25s'
-                : isRefreshing ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s'
-                : 'box-shadow 0.1s',
-              border: `1.5px solid ${progress >= 1 || isRefreshing ? 'hsl(var(--primary) / 0.25)' : 'hsl(var(--border))'}`,
+              transition: isSettling ? 'transform 0.25s ease-in'
+                : isRefreshing ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                : 'none',
             }}
           >
             {isRefreshing ? (
-              /* Spinning state: Material-style indeterminate spinner */
               <RefreshCw
                 className="w-[18px] h-[18px] text-primary"
                 style={{ animation: 'ptr-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite' }}
                 strokeWidth={2.5}
               />
             ) : (
-              /* Pulling state: RefreshCw icon that rotates with progress */
               <RefreshCw
                 className="w-[18px] h-[18px]"
                 strokeWidth={2.5}
