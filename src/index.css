@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 40 20% 97%;
+    --background: 220 15% 96%;
     --foreground: 220 25% 10%;
 
     --card: 0 0% 100%;
@@ -15,40 +15,40 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 10%;
 
-    --primary: 220 90% 52%;
+    --primary: 145 65% 42%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 42 95% 55%;
+    --secondary: 35 100% 55%;
     --secondary-foreground: 220 25% 10%;
 
-    --muted: 40 20% 93%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 220 12% 91%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 42 95% 55%;
-    --accent-foreground: 220 25% 10%;
+    --accent: 145 65% 42%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 80% 60%;
+    --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 90%;
-    --input: 40 15% 90%;
-    --ring: 220 90% 52%;
+    --border: 220 12% 88%;
+    --input: 220 12% 88%;
+    --ring: 145 65% 42%;
 
     --radius: 1rem;
 
-    --card-orange: 24 80% 90%;
-    --card-blue: 215 65% 92%;
-    --card-mint: 158 45% 89%;
-    --card-pink: 345 65% 92%;
-    --card-yellow: 48 75% 87%;
-    --card-purple: 270 50% 92%;
+    --card-orange: 20 70% 92%;
+    --card-blue: 210 55% 92%;
+    --card-mint: 155 40% 90%;
+    --card-pink: 340 55% 92%;
+    --card-yellow: 40 65% 89%;
+    --card-purple: 265 45% 92%;
 
-    --chart-day1: 220 90% 55%;
-    --chart-day2: 42 95% 55%;
-    --chart-day3: 280 60% 55%;
-    --chart-day4: 160 60% 45%;
-    --chart-day5: 30 90% 55%;
-    --chart-total: 220 20% 30%;
+    --chart-day1: 145 65% 42%;
+    --chart-day2: 35 100% 55%;
+    --chart-day3: 265 55% 55%;
+    --chart-day4: 195 70% 45%;
+    --chart-day5: 20 80% 55%;
+    --chart-total: 220 15% 30%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
