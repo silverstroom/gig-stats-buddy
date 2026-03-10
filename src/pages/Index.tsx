@@ -30,6 +30,8 @@ import { WeeklySalesCard } from '@/components/WeeklySalesCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', 'soft-card-mint', 'soft-card-pink'];
+const DAY_CARD_STYLES = ['soft-card-teal', 'soft-card-coral', 'soft-card-deepblue'];
+const DAY_COLOR_CLASSES = ['text-[hsl(168,55%,51%)]', 'text-[hsl(5,85%,65%)]', 'text-[hsl(225,100%,50%)]'];
 
 const Index = () => {
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
