@@ -22,9 +22,10 @@ export function BottomNav() {
           const isActive = location.pathname === item.to;
           const Icon = item.icon;
           return (
-            <NavLink
+             <NavLink
               key={item.to}
               to={item.to}
+              onClick={() => haptics.light()}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-2xl transition-all duration-200',
                 isActive ?
