@@ -5,11 +5,11 @@ import { cn } from '@/lib/utils';
 import { useHaptics } from '@/hooks/useHaptics';
 
 const NAV_ITEMS = [
-{ to: '/', label: 'Home', icon: Home },
-{ to: '/monitoraggio', label: 'Monitor', icon: TrendingUp },
-{ to: '/obiettivo', label: 'Goal', icon: Target },
-{ to: '/profilo', label: 'Profilo', icon: User }];
-
+  { to: '/', label: 'Home', icon: Home },
+  { to: '/monitoraggio', label: 'Monitor', icon: TrendingUp },
+  { to: '/obiettivo', label: 'Goal', icon: Target },
+  { to: '/profilo', label: 'Profilo', icon: User },
+];
 
 export function BottomNav() {
   const location = useLocation();
@@ -17,35 +17,40 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-50 safe-area-bottom">
-      <div className="flex items-center justify-around h-16 max-w-md mx-auto px-3 backdrop-blur-xl rounded-[2rem] shadow-lg bg-blue-900 dark:bg-slate-800 dark:border dark:border-slate-600/50">
+      <div className="glass-nav flex items-center justify-around h-[64px] max-w-md mx-auto px-2 rounded-[1.75rem]">
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.to;
           const Icon = item.icon;
           return (
-             <NavLink
+            <NavLink
               key={item.to}
               to={item.to}
               onClick={() => haptics.light()}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-2xl transition-all duration-200',
-                isActive ?
-                'text-white' :
-                'text-white/50 hover:text-white/70'
-              )}>
-              
-              <div className={cn(
-                'flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-200',
-                isActive && 'bg-white/20'
-              )}>
-                <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.8} />
+                'flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-2xl transition-all duration-300',
+                isActive
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <div
+                className={cn(
+                  'flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-300',
+                  isActive && 'bg-primary/12 shadow-[0_2px_12px_-2px_hsl(var(--primary)/0.3)]'
+                )}
+              >
+                <Icon
+                  className={cn('w-5 h-5 transition-transform duration-300', isActive && 'scale-110')}
+                  strokeWidth={isActive ? 2.5 : 1.8}
+                />
               </div>
-              <span className={cn('text-[9px] font-medium', isActive && 'font-bold')}>
+              <span className={cn('text-[9px] font-medium transition-all', isActive && 'font-bold')}>
                 {item.label}
               </span>
-            </NavLink>);
-
+            </NavLink>
+          );
         })}
       </div>
-    </nav>);
-
+    </nav>
+  );
 }
