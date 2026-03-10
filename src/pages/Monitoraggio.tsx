@@ -525,7 +525,7 @@ const Monitoraggio = () => {
       <main className="px-5 space-y-4">
         {/* Import Section */}
         {hasData === false && (
-          <div className="soft-card-orange p-6 text-center space-y-4">
+          <div className="glass-orange p-6 text-center space-y-4">
             <Upload className="w-10 h-10 text-primary mx-auto" />
             <h3 className="text-base font-bold">Importa dati storici</h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
