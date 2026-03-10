@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon } from 'lucide-react';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon, ArrowDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
+import { useHaptics } from '@/hooks/useHaptics';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import logoBlack from '@/assets/logo_black.png';
 import {
   groupEventsByEdition,
@@ -33,10 +35,22 @@ const Index = () => {
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
   const { requestPermission } = useTicketNotifications(events);
   const { theme, setTheme } = useTheme();
+  const haptics = useHaptics();
   const [selectedEditionKey, setSelectedEditionKey] = useState<string | null>(null);
   const [notifEnabled, setNotifEnabled] = useState(() => 
     'Notification' in window && Notification.permission === 'granted'
   );
+
+  const handleRefresh = useCallback(async () => {
+    haptics.light();
+    await fetchEvents();
+    haptics.success();
+  }, [fetchEvents, haptics]);
+
+  const { pullDistance, isRefreshing, progress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 100,
+  });
 
   useEffect(() => {
     fetchEvents();
@@ -118,7 +132,30 @@ const Index = () => {
   const totalSoldYesterday = todaySalesPerDay.reduce((s, d) => s + d.soldYesterday, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-32 relative">
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="absolute top-0 left-0 right-0 flex items-center justify-center overflow-hidden transition-all duration-200 ease-out z-50"
+        style={{
+          height: `${pullDistance}px`,
+          opacity: progress,
+        }}
+      >
+        <div
+          className="flex flex-col items-center gap-1"
+          style={{
+            transform: `rotate(${progress * 360}deg)`,
+            transition: isRefreshing ? 'transform 0.6s linear' : undefined,
+          }}
+        >
+          <ArrowDown
+            className={`w-5 h-5 text-primary transition-transform duration-200 ${progress >= 1 ? 'rotate-180' : ''}`}
+          />
+        </div>
+        {progress >= 1 && (
+          <span className="text-xs text-primary font-medium ml-2">Rilascia per aggiornare</span>
+        )}
+      </div>
       {/* Header */}
       <header className="px-5 pt-8 pb-5">
         <div className="flex items-start justify-between">
@@ -146,7 +183,10 @@ const Index = () => {
               {notifEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
             </Button>
             <Button
-              onClick={fetchEvents}
+              onClick={() => {
+                haptics.light();
+                handleRefresh();
+              }}
               disabled={loading}
               variant="outline"
               size="icon"

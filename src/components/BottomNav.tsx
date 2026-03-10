@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { Home, TrendingUp, Target, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useHaptics } from '@/hooks/useHaptics';
 
 const NAV_ITEMS = [
 { to: '/', label: 'Home', icon: Home },
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const location = useLocation();
+  const haptics = useHaptics();
 
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-50 safe-area-bottom">
@@ -20,9 +22,10 @@ export function BottomNav() {
           const isActive = location.pathname === item.to;
           const Icon = item.icon;
           return (
-            <NavLink
+             <NavLink
               key={item.to}
               to={item.to}
+              onClick={() => haptics.light()}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-2xl transition-all duration-200',
                 isActive ?
