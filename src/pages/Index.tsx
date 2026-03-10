@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon, ArrowDown } from 'lucide-react';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -49,9 +49,9 @@ const Index = () => {
     haptics.success();
   }, [fetchEvents, haptics]);
 
-  const { pullDistance, isRefreshing, progress } = usePullToRefresh({
+  const { pullDistance, isRefreshing, isSettling, progress } = usePullToRefresh({
     onRefresh: handleRefresh,
-    threshold: 100,
+    threshold: 80,
   });
 
   useEffect(() => {
@@ -135,29 +135,54 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 relative">
-      {/* Pull-to-refresh indicator */}
-      <div
-        className="absolute top-0 left-0 right-0 flex items-center justify-center overflow-hidden transition-all duration-200 ease-out z-50"
-        style={{
-          height: `${pullDistance}px`,
-          opacity: progress,
-        }}
-      >
+      {/* Chrome-style pull-to-refresh indicator */}
+      {(pullDistance > 0 || isRefreshing || isSettling) && (
         <div
-          className="flex flex-col items-center gap-1"
+          className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
           style={{
-            transform: `rotate(${progress * 360}deg)`,
-            transition: isRefreshing ? 'transform 0.6s linear' : undefined,
+            transform: `translateY(${Math.min(pullDistance - 28, 28)}px)`,
+            transition: isSettling || isRefreshing ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+            opacity: isSettling ? 0 : 1,
           }}
         >
-          <ArrowDown
-            className={`w-5 h-5 text-primary transition-transform duration-200 ${progress >= 1 ? 'rotate-180' : ''}`}
-          />
+          <div
+            className="w-10 h-10 rounded-full bg-background shadow-lg border border-border flex items-center justify-center"
+            style={{
+              transition: isSettling ? 'opacity 0.3s, transform 0.3s' : 'none',
+              transform: `scale(${isSettling ? 0.5 : 1})`,
+            }}
+          >
+            {isRefreshing ? (
+              <svg className="w-5 h-5 text-primary animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5 text-primary"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  transform: `rotate(${progress * 270}deg)`,
+                  transition: 'none',
+                }}
+              >
+                <path
+                  d="M21 12a9 9 0 11-6.219-8.56"
+                  strokeDasharray={`${progress * 50} 60`}
+                />
+                {progress >= 1 && (
+                  <polyline points="16 3 21 3 21 8" />
+                )}
+              </svg>
+            )}
+          </div>
         </div>
-        {progress >= 1 && (
-          <span className="text-xs text-primary font-medium ml-2">Rilascia per aggiornare</span>
-        )}
-      </div>
+      )}
       {/* Header */}
       <header className="px-5 pt-8 pb-5">
         <div className="flex items-start justify-between">

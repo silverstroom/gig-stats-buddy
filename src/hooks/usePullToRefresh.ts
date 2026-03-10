@@ -2,13 +2,15 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void> | void;
-  threshold?: number; // px to pull before triggering (default 100)
-  resistance?: number; // drag resistance factor (default 2.5)
+  threshold?: number;
+  resistance?: number;
+  maxPull?: number;
 }
 
-export function usePullToRefresh({ onRefresh, threshold = 100, resistance = 2.5 }: UsePullToRefreshOptions) {
+export function usePullToRefresh({ onRefresh, threshold = 80, resistance = 2.5, maxPull = 120 }: UsePullToRefreshOptions) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSettling, setIsSettling] = useState(false);
   const startYRef = useRef<number | null>(null);
   const pullingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,16 +35,16 @@ export function usePullToRefresh({ onRefresh, threshold = 100, resistance = 2.5 
 
     const deltaY = e.touches[0].clientY - startYRef.current;
     
-    // Only activate on intentional downward pull (>15px initial threshold)
-    if (deltaY < 15 && !pullingRef.current) return;
+    if (deltaY < 10 && !pullingRef.current) return;
     
     if (deltaY > 0) {
       pullingRef.current = true;
-      e.preventDefault(); // Prevent native scroll while pulling
-      const dampened = Math.min(deltaY / resistance, threshold * 1.3);
+      e.preventDefault();
+      // Rubber-band effect: diminishing returns as you pull further
+      const dampened = Math.min(deltaY / resistance, maxPull);
       setPullDistance(dampened);
     }
-  }, [isAtTop, isRefreshing, resistance, threshold]);
+  }, [isAtTop, isRefreshing, resistance, maxPull]);
 
   const handleTouchEnd = useCallback(async () => {
     if (!pullingRef.current) {
@@ -52,15 +54,23 @@ export function usePullToRefresh({ onRefresh, threshold = 100, resistance = 2.5 
 
     if (pullDistance >= threshold) {
       setIsRefreshing(true);
-      setPullDistance(threshold * 0.6); // Snap to loading position
+      setPullDistance(56); // Snap to spinner resting position
       try {
         await onRefresh();
       } finally {
+        // Brief delay so user sees completion
+        await new Promise(r => setTimeout(r, 300));
         setIsRefreshing(false);
+        setIsSettling(true);
+        setPullDistance(0);
+        setTimeout(() => setIsSettling(false), 300);
       }
+    } else {
+      setIsSettling(true);
+      setPullDistance(0);
+      setTimeout(() => setIsSettling(false), 300);
     }
 
-    setPullDistance(0);
     startYRef.current = null;
     pullingRef.current = false;
   }, [pullDistance, threshold, onRefresh]);
@@ -80,5 +90,5 @@ export function usePullToRefresh({ onRefresh, threshold = 100, resistance = 2.5 
 
   const progress = Math.min(pullDistance / threshold, 1);
 
-  return { pullDistance, isRefreshing, progress, containerRef };
+  return { pullDistance, isRefreshing, isSettling, progress, containerRef };
 }
