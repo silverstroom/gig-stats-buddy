@@ -12,8 +12,8 @@ export function TicketTypeTable({ rows }: TicketTypeTableProps) {
   const total = rows.reduce((sum, r) => sum + r.sold, 0);
 
   return (
-    <div className="soft-card overflow-hidden">
-      <div className="p-4 sm:p-5 border-b border-border/30">
+    <div className="glass overflow-hidden">
+      <div className="p-4 sm:p-5 border-b border-foreground/[0.06]">
         <h3 className="font-bold text-base">Biglietti per Tipologia</h3>
         <p className="text-[11px] text-muted-foreground mt-1">
           Ogni riga = un evento DICE con i giorni coperti
@@ -22,7 +22,7 @@ export function TicketTypeTable({ rows }: TicketTypeTableProps) {
       <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow className="border-border/30">
+          <TableRow className="border-foreground/[0.06]">
             <TableHead className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Tipologia</TableHead>
             <TableHead className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Giorni</TableHead>
             <TableHead className="text-right text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">Venduti</TableHead>
@@ -33,14 +33,14 @@ export function TicketTypeTable({ rows }: TicketTypeTableProps) {
           {rows.map((row, i) => {
             const pct = total > 0 ? ((row.sold / total) * 100).toFixed(1) : '0';
             return (
-              <TableRow key={i} className="border-border/20 hover:bg-muted/30">
+              <TableRow key={i} className="border-foreground/[0.04] hover:bg-foreground/[0.02]">
                 <TableCell className="font-medium text-xs max-w-[180px]">
                   <span className="line-clamp-2">{row.eventName}</span>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {row.days.map((d) => (
-                      <Badge key={d} variant="secondary" className="text-[9px] font-mono px-1.5 py-0 rounded-lg">
+                      <Badge key={d} variant="secondary" className="text-[9px] font-mono px-1.5 py-0 rounded-lg backdrop-blur-sm">
                         {d}
                       </Badge>
                     ))}
@@ -51,7 +51,7 @@ export function TicketTypeTable({ rows }: TicketTypeTableProps) {
               </TableRow>
             );
           })}
-          <TableRow className="border-border/30 bg-primary/5 font-bold">
+          <TableRow className="border-foreground/[0.06] bg-primary/[0.04] font-bold">
             <TableCell className="text-primary font-bold text-xs">Totale</TableCell>
             <TableCell />
             <TableCell className="text-right font-mono text-primary text-sm">{total.toLocaleString('it-IT')}</TableCell>

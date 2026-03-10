@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, ChevronDown } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { DailySalesDetail } from '@/lib/ticket-utils';
 import { cn } from '@/lib/utils';
@@ -25,8 +25,8 @@ function DayTab({ day, isActive, onClick }: { day: DailySalesDetail; isActive: b
       className={cn(
         'flex flex-col items-center px-4 py-2.5 rounded-2xl transition-all duration-200 min-w-[70px]',
         isActive
-          ? 'bg-primary text-primary-foreground shadow-md'
-          : 'bg-foreground/[0.04] text-muted-foreground hover:bg-foreground/[0.08]'
+          ? 'glass-chip-active'
+          : 'glass-chip hover:bg-foreground/[0.06]'
       )}
     >
       <span className="text-[11px] font-bold">{day.day}</span>
@@ -70,8 +70,9 @@ function DayContent({ day }: { day: DailySalesDetail }) {
               <Tooltip
                 formatter={(value: number) => [value.toLocaleString('it-IT'), 'Venduti']}
                 contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
+                  background: 'hsl(var(--glass-bg))',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsl(var(--glass-border))',
                   borderRadius: '16px',
                   fontSize: '11px',
                 }}
@@ -95,7 +96,7 @@ function DayContent({ day }: { day: DailySalesDetail }) {
         </div>
       </div>
 
-      {/* Bar breakdown instead of table */}
+      {/* Bar breakdown */}
       <div className="space-y-2">
         {data.map((item, i) => {
           const barWidth = Math.max(4, (item.value / maxSold) * 100);
@@ -105,13 +106,13 @@ function DayContent({ day }: { day: DailySalesDetail }) {
                 <span className="text-foreground/70 truncate mr-2">{item.name}</span>
                 <span className="font-mono font-bold text-foreground">{item.value.toLocaleString('it-IT')}</span>
               </div>
-              <div className="h-1.5 rounded-full bg-foreground/5 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-foreground/[0.04] overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${barWidth}%`,
                     background: PIE_COLORS[i % PIE_COLORS.length],
-                    opacity: 0.6,
+                    opacity: 0.55,
                   }}
                 />
               </div>
@@ -131,7 +132,7 @@ export function DailySalesBreakdown({ breakdown }: Props) {
   const activeDay = breakdown[activeIndex];
 
   return (
-    <div className="soft-card">
+    <div className="glass">
       <div className="p-5 pb-4">
         <div className="flex items-center gap-2 mb-1">
           <ShoppingBag className="w-5 h-5 text-primary" />

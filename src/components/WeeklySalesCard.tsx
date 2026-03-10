@@ -102,10 +102,10 @@ export function WeeklySalesCard({ events }: WeeklySalesCardProps) {
   if (weeklyBiglietti === null) return null;
 
   return (
-    <div className="soft-card-purple p-5">
+    <div className="glass-purple p-5">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2.5 rounded-2xl bg-foreground/5">
+        <div className="p-2.5 rounded-2xl bg-foreground/[0.04] backdrop-blur-sm">
           <CalendarDays className="w-5 h-5 text-muted-foreground" />
         </div>
         <div>
@@ -121,8 +121,8 @@ export function WeeklySalesCard({ events }: WeeklySalesCardProps) {
           { value: weeklyBiglietti, label: 'Biglietti', prefix: '+' },
           { value: weeklyPresenze, label: 'Presenze', prefix: '+' },
         ].map((stat) => (
-          <div key={stat.label} className="text-center p-3 rounded-2xl bg-foreground/[0.03]">
-            <p className="text-xl font-extrabold font-mono">{stat.prefix}{(stat.value ?? 0).toLocaleString('it-IT')}</p>
+          <div key={stat.label} className="text-center p-3 rounded-2xl glass-subtle">
+            <p className="text-xl font-bold font-mono">{stat.prefix}{(stat.value ?? 0).toLocaleString('it-IT')}</p>
             <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{stat.label}</p>
           </div>
         ))}
@@ -130,7 +130,7 @@ export function WeeklySalesCard({ events }: WeeklySalesCardProps) {
 
       {/* Per-event breakdown */}
       {eventDetails.length > 0 && (
-        <div className="border-t border-foreground/10 pt-4">
+        <div className="border-t border-foreground/[0.06] pt-4">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Dettaglio per tipo</p>
           <div className="space-y-2">
             {eventDetails.map((detail) => {
@@ -140,15 +140,15 @@ export function WeeklySalesCard({ events }: WeeklySalesCardProps) {
               return (
                 <div key={detail.eventName} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-foreground/80 truncate mr-2 text-[11px]">{detail.eventName}</span>
+                    <span className="text-foreground/70 truncate mr-2 text-[11px]">{detail.eventName}</span>
                     <div className="flex items-center gap-2 whitespace-nowrap">
                       <span className="font-mono font-bold text-foreground text-[11px]">+{detail.ticketsDelta}</span>
                       <span className="text-muted-foreground text-[10px]">→ {detail.presenzeDelta} pres.</span>
                     </div>
                   </div>
-                  <div className="h-1.5 rounded-full bg-foreground/5 overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-foreground/[0.04] overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-primary/40 transition-all duration-500"
+                      className="h-full rounded-full bg-primary/30 transition-all duration-500"
                       style={{ width: `${barWidth}%` }}
                     />
                   </div>
