@@ -43,12 +43,12 @@
     --card-yellow: 42 75% 90%;
     --card-purple: 240 40% 93%;
 
-    --chart-day1: 225 100% 50%;
-    --chart-day2: 47 100% 50%;
-    --chart-day3: 210 80% 45%;
-    --chart-day4: 35 90% 52%;
-    --chart-day5: 240 70% 55%;
-    --chart-total: 225 40% 30%;
+    --chart-day1: 168 55% 51%;
+    --chart-day2: 5 80% 65%;
+    --chart-day3: 225 100% 50%;
+    --chart-day4: 47 100% 50%;
+    --chart-day5: 280 60% 55%;
+    --chart-total: 230 35% 25%;
 
     --sidebar-background: 220 30% 96%;
     --sidebar-foreground: 225 40% 15%;
@@ -99,11 +99,11 @@
     --card-yellow: 42 35% 11%;
     --card-purple: 240 20% 12%;
 
-    --chart-day1: 225 100% 55%;
-    --chart-day2: 47 100% 55%;
-    --chart-day3: 210 80% 50%;
-    --chart-day4: 35 90% 55%;
-    --chart-day5: 240 70% 58%;
+    --chart-day1: 168 55% 55%;
+    --chart-day2: 5 80% 68%;
+    --chart-day3: 225 100% 58%;
+    --chart-day4: 47 100% 55%;
+    --chart-day5: 280 60% 60%;
     --chart-total: 220 15% 60%;
 
     --sidebar-background: 225 40% 7%;
