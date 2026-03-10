@@ -512,7 +512,7 @@ const Monitoraggio = () => {
       {/* Header */}
       <header className="px-5 pt-8 pb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-primary/10">
+          <div className="p-2.5 rounded-2xl glass-subtle">
             <ArrowRightLeft className="w-6 h-6 text-primary" />
           </div>
           <div>
