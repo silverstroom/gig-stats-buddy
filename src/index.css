@@ -227,3 +227,8 @@
     padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
   }
 }
+
+@keyframes ptr-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
