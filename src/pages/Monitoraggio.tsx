@@ -547,7 +547,7 @@ const Monitoraggio = () => {
 
         {/* Date Controls - Redesigned */}
         {hasData && (
-          <div className="soft-card p-4 space-y-3">
+          <div className="glass p-4 space-y-3">
             {/* Preset chips */}
             <div className="flex flex-wrap gap-2">
               {PRESETS.map((preset, idx) => (
