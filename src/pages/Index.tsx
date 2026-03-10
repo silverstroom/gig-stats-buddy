@@ -185,36 +185,33 @@ const Index = () => {
             <img src={logoBlack} alt="Color Fest" className="h-12 dark:invert" />
           </div>
           <div className="flex items-center gap-2">
-            <Button
+            <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              variant="outline"
-              size="icon"
-              className="rounded-2xl h-9 w-9 shadow-sm"
-              title={theme === 'dark' ? 'Modalità chiara' : 'Modalità scura'}>
+              className="glass-button h-9 w-9 flex items-center justify-center"
+              title={theme === 'dark' ? 'Modalità chiara' : 'Modalità scura'}
+            >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={async () => {
                 const granted = await requestPermission();
                 setNotifEnabled(granted);
               }}
-              variant="outline"
-              size="icon"
-              className="rounded-2xl h-9 w-9 shadow-sm"
-              title={notifEnabled ? 'Notifiche attive' : 'Attiva notifiche'}>
+              className="glass-button h-9 w-9 flex items-center justify-center"
+              title={notifEnabled ? 'Notifiche attive' : 'Attiva notifiche'}
+            >
               {notifEnabled ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={() => {
                 haptics.light();
                 handleRefresh();
               }}
               disabled={loading}
-              variant="outline"
-              size="icon"
-              className="rounded-2xl h-9 w-9 shadow-sm">
+              className="glass-button h-9 w-9 flex items-center justify-center disabled:opacity-50"
+            >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin-bounce' : ''}`} />
-            </Button>
+            </button>
           </div>
         </div>
         <p className="text-sm text-foreground/70 dark:text-foreground/80 font-semibold mt-3 tracking-tight">
