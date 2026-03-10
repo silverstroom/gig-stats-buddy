@@ -285,8 +285,8 @@ const Index = () => {
               value={day.count}
               subtitle={`Presenze ${day.day}`}
               icon={<CalendarDays className="w-5 h-5" />}
-              colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
-              cardStyle={CARD_STYLES[(i + 2) % CARD_STYLES.length]}
+              colorClass={DAY_COLOR_CLASSES[i % DAY_COLOR_CLASSES.length]}
+              cardStyle={DAY_CARD_STYLES[i % DAY_CARD_STYLES.length]}
               todaySales={
               isLatestEdition && snapshots.yesterdayBaseline ?
               todaySalesMap.get(day.date) || null :
