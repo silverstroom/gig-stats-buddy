@@ -568,8 +568,8 @@ const Monitoraggio = () => {
                   <button
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                       activePreset === -1
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                        ? 'glass-chip-active'
+                        : 'glass-chip hover:bg-foreground/[0.06]'
                     }`}
                   >
                     <CalendarRange className="w-3 h-3" />
