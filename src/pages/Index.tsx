@@ -246,7 +246,7 @@ const Index = () => {
       <main className="px-5 space-y-5">
         {/* Error State */}
         {error &&
-        <div className="soft-card-pink p-4">
+        <div className="glass-pink p-4">
             <p className="text-sm text-destructive font-medium">Errore: {error}</p>
           </div>
         }
