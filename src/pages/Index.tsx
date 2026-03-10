@@ -242,7 +242,8 @@ const Index = () => {
         {/* Stats */}
         {selectedEdition &&
         <>
-            <div className="grid grid-cols-2 gap-3">
+            {/* Cumulative totals — visually separated */}
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-[1.75rem] bg-gradient-to-br from-primary/[0.04] to-secondary/[0.04] border border-border/30 shadow-sm">
               <StatCard
               title="Biglietti"
               value={totalTickets}
@@ -256,7 +257,6 @@ const Index = () => {
               null
               }
               todayBreakdown={isLatestEdition ? todayBreakdown : undefined} />
-            
 
               <StatCard
               title="Presenze"
@@ -272,8 +272,10 @@ const Index = () => {
               }
               todayBreakdown={isLatestEdition ? todayPresenzeBreakdown : undefined}
               todayLabel="Presenze oggi" />
-            
+            </div>
 
+            {/* Per-day breakdown */}
+            <div className="grid grid-cols-2 gap-3">
               {distribution.map((day, i) =>
             <StatCard
               key={day.date}
@@ -288,7 +290,6 @@ const Index = () => {
               todaySalesMap.get(day.date) || null :
               null
               } />
-
             )}
             </div>
 
