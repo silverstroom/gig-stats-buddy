@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Target, Edit3, Check, RefreshCw } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
 import { groupEventsByEdition, getTotalTickets, calculateEditionAttendance } from '@/lib/ticket-utils';
 import { Users, Ticket } from 'lucide-react';
@@ -67,7 +65,7 @@ const Obiettivo = () => {
       <header className="px-5 pt-8 pb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-primary/10">
+            <div className="p-2.5 rounded-2xl glass-subtle">
               <Target className="w-6 h-6 text-primary" />
             </div>
             <div>
@@ -77,21 +75,19 @@ const Obiettivo = () => {
               </p>
             </div>
           </div>
-          <Button
+          <button
             onClick={fetchEvents}
             disabled={loading}
-            variant="outline"
-            size="icon"
-            className="rounded-2xl h-10 w-10 shadow-sm"
+            className="glass-button h-10 w-10 flex items-center justify-center disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin-bounce' : ''}`} />
-          </Button>
+          </button>
         </div>
       </header>
 
       <main className="px-5 space-y-4">
         {/* Goal setting */}
-        <div className="soft-card-blue p-4">
+        <div className="glass-blue p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">Obiettivo presenze</span>
             {editing ? (
@@ -100,24 +96,24 @@ const Obiettivo = () => {
                   type="number"
                   value={tempGoal}
                   onChange={(e) => setTempGoal(e.target.value)}
-                  className="w-28 h-8 text-sm font-mono rounded-xl"
+                  className="w-28 h-8 text-sm font-mono rounded-xl glass-input"
                   min={1}
                 />
-                <Button size="sm" variant="ghost" onClick={saveGoal} className="rounded-xl">
+                <button onClick={saveGoal} className="glass-button h-8 w-8 flex items-center justify-center">
                   <Check className="w-4 h-4" />
-                </Button>
+                </button>
               </div>
             ) : (
-              <Button size="sm" variant="ghost" onClick={() => { setTempGoal(goal.toString()); setEditing(true); }} className="gap-1 rounded-xl">
-                <span className="font-mono font-bold">{goal.toLocaleString('it-IT')}</span>
+              <button onClick={() => { setTempGoal(goal.toString()); setEditing(true); }} className="glass-button px-3 py-1.5 flex items-center gap-1">
+                <span className="font-mono font-bold text-sm">{goal.toLocaleString('it-IT')}</span>
                 <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
-              </Button>
+              </button>
             )}
           </div>
         </div>
 
         {/* Radial progress */}
-        <div className="soft-card p-5">
+        <div className="glass p-5">
           <h2 className="text-base font-bold text-center mb-2">Stato di Avanzamento</h2>
           {loading ? (
             <div className="w-64 h-64 flex items-center justify-center mx-auto">
@@ -146,7 +142,7 @@ const Obiettivo = () => {
                   </RadialBarChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-extrabold font-mono" style={{ color }}>
+                  <span className="text-3xl font-bold font-mono" style={{ color }}>
                     {pct.toFixed(1)}%
                   </span>
                   <span className="text-xs text-muted-foreground mt-1">completamento</span>
@@ -154,19 +150,19 @@ const Obiettivo = () => {
               </div>
 
               <div className="mt-4 space-y-2.5">
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-2xl glass-subtle">
                   <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                     <Users className="w-4 h-4" /> Presenze totali
                   </span>
                   <span className="font-mono font-bold">{totalPresenze.toLocaleString('it-IT')}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-2xl glass-subtle">
                   <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                     <Ticket className="w-4 h-4" /> Biglietti venduti
                   </span>
                   <span className="font-mono font-bold">{currentTickets.toLocaleString('it-IT')}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-2xl glass-subtle">
                   <span className="text-xs font-medium text-muted-foreground">Obiettivo</span>
                   <span className="font-mono font-bold">{goal.toLocaleString('it-IT')}</span>
                 </div>
