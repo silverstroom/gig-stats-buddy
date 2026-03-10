@@ -5,14 +5,30 @@ interface UsePullToRefreshOptions {
   threshold?: number;
   resistance?: number;
   maxPull?: number;
+  /** Called at regular intervals during pull with current progress 0-1+ */
+  onProgressTick?: (progress: number) => void;
+  /** Called once when progress crosses 1.0 */
+  onThresholdReached?: () => void;
+  /** Called when refresh starts executing */
+  onRefreshStart?: () => void;
 }
 
-export function usePullToRefresh({ onRefresh, threshold = 80, resistance = 2.5, maxPull = 120 }: UsePullToRefreshOptions) {
+export function usePullToRefresh({
+  onRefresh,
+  threshold = 80,
+  resistance = 2.5,
+  maxPull = 130,
+  onProgressTick,
+  onThresholdReached,
+  onRefreshStart,
+}: UsePullToRefreshOptions) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSettling, setIsSettling] = useState(false);
   const startYRef = useRef<number | null>(null);
   const pullingRef = useRef(false);
+  const thresholdCrossedRef = useRef(false);
+  const lastTickRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isAtTop = useCallback(() => {
@@ -22,6 +38,8 @@ export function usePullToRefresh({ onRefresh, threshold = 80, resistance = 2.5, 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (!isAtTop() || isRefreshing) return;
     startYRef.current = e.touches[0].clientY;
+    thresholdCrossedRef.current = false;
+    lastTickRef.current = 0;
   }, [isAtTop, isRefreshing]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
@@ -34,17 +52,35 @@ export function usePullToRefresh({ onRefresh, threshold = 80, resistance = 2.5, 
     }
 
     const deltaY = e.touches[0].clientY - startYRef.current;
-    
+
     if (deltaY < 10 && !pullingRef.current) return;
-    
+
     if (deltaY > 0) {
       pullingRef.current = true;
       e.preventDefault();
-      // Rubber-band effect: diminishing returns as you pull further
       const dampened = Math.min(deltaY / resistance, maxPull);
       setPullDistance(dampened);
+
+      const currentProgress = dampened / threshold;
+
+      // Tension ticks every ~12% of progress
+      const tickStep = Math.floor(currentProgress * 8);
+      if (tickStep > lastTickRef.current && currentProgress < 1) {
+        lastTickRef.current = tickStep;
+        onProgressTick?.(currentProgress);
+      }
+
+      // Threshold pop – fire once
+      if (currentProgress >= 1 && !thresholdCrossedRef.current) {
+        thresholdCrossedRef.current = true;
+        onThresholdReached?.();
+      }
+      // Reset if pulled back below threshold
+      if (currentProgress < 0.9) {
+        thresholdCrossedRef.current = false;
+      }
     }
-  }, [isAtTop, isRefreshing, resistance, maxPull]);
+  }, [isAtTop, isRefreshing, resistance, maxPull, threshold, onProgressTick, onThresholdReached]);
 
   const handleTouchEnd = useCallback(async () => {
     if (!pullingRef.current) {
@@ -54,16 +90,16 @@ export function usePullToRefresh({ onRefresh, threshold = 80, resistance = 2.5, 
 
     if (pullDistance >= threshold) {
       setIsRefreshing(true);
-      setPullDistance(56); // Snap to spinner resting position
+      setPullDistance(52);
+      onRefreshStart?.();
       try {
         await onRefresh();
       } finally {
-        // Brief delay so user sees completion
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 400));
         setIsRefreshing(false);
         setIsSettling(true);
         setPullDistance(0);
-        setTimeout(() => setIsSettling(false), 300);
+        setTimeout(() => setIsSettling(false), 350);
       }
     } else {
       setIsSettling(true);
@@ -73,7 +109,9 @@ export function usePullToRefresh({ onRefresh, threshold = 80, resistance = 2.5, 
 
     startYRef.current = null;
     pullingRef.current = false;
-  }, [pullDistance, threshold, onRefresh]);
+    thresholdCrossedRef.current = false;
+    lastTickRef.current = 0;
+  }, [pullDistance, threshold, onRefresh, onRefreshStart]);
 
   useEffect(() => {
     const el = containerRef.current || document;
