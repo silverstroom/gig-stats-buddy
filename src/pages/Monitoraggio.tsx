@@ -772,7 +772,7 @@ const Monitoraggio = () => {
                         ? ((cf14TotalPresenze - result.totalPresenze) / result.totalPresenze * 100)
                         : null;
                       return (
-                        <tr key={result.edition.key} className="border-b border-border/20">
+                        <tr key={result.edition.key} className="border-b border-foreground/[0.04]">
                           <td className="py-2 px-3 font-semibold text-xs flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: result.edition.color }} />
                             {result.edition.label}
