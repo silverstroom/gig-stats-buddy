@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon, ArrowDown } from 'lucide-react';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
