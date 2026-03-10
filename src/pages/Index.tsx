@@ -262,7 +262,7 @@ const Index = () => {
         {selectedEdition &&
         <>
             {/* Cumulative totals — visually separated */}
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-[1.75rem] bg-foreground/[0.04] border border-foreground/10 shadow-md dark:bg-foreground/[0.06] dark:border-foreground/10">
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-[1.75rem] glass-subtle">
               <StatCard
               title="Biglietti"
               value={totalTickets}
