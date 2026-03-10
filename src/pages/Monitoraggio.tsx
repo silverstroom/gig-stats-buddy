@@ -505,7 +505,7 @@ const Monitoraggio = () => {
     }));
   }, [editionResults]);
 
-  const CARD_STYLES_MON = ['soft-card-blue', 'soft-card-yellow', 'soft-card-purple', 'soft-card-mint', 'soft-card-pink'];
+  const CARD_STYLES_MON = ['glass-blue', 'glass-yellow', 'glass-purple', 'glass-mint', 'glass-pink'];
 
   return (
     <div className="min-h-screen bg-background pb-32">
