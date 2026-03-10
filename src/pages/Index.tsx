@@ -132,7 +132,30 @@ const Index = () => {
   const totalSoldYesterday = todaySalesPerDay.reduce((s, d) => s + d.soldYesterday, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-32 relative">
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="absolute top-0 left-0 right-0 flex items-center justify-center overflow-hidden transition-all duration-200 ease-out z-50"
+        style={{
+          height: `${pullDistance}px`,
+          opacity: progress,
+        }}
+      >
+        <div
+          className="flex flex-col items-center gap-1"
+          style={{
+            transform: `rotate(${progress * 360}deg)`,
+            transition: isRefreshing ? 'transform 0.6s linear' : undefined,
+          }}
+        >
+          <ArrowDown
+            className={`w-5 h-5 text-primary transition-transform duration-200 ${progress >= 1 ? 'rotate-180' : ''}`}
+          />
+        </div>
+        {progress >= 1 && (
+          <span className="text-xs text-primary font-medium ml-2">Rilascia per aggiornare</span>
+        )}
+      </div>
       {/* Header */}
       <header className="px-5 pt-8 pb-5">
         <div className="flex items-start justify-between">
