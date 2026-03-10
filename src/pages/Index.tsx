@@ -49,9 +49,9 @@ const Index = () => {
     haptics.success();
   }, [fetchEvents, haptics]);
 
-  const { pullDistance, isRefreshing, progress } = usePullToRefresh({
+  const { pullDistance, isRefreshing, isSettling, progress } = usePullToRefresh({
     onRefresh: handleRefresh,
-    threshold: 100,
+    threshold: 80,
   });
 
   useEffect(() => {
