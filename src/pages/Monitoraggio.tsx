@@ -686,7 +686,7 @@ const Monitoraggio = () => {
             </div>
 
             {/* Bar Chart */}
-            <div className="soft-card p-4">
+            <div className="glass p-4">
               <h3 className="text-sm font-bold mb-3">Confronto diretto</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={barChartData}>
