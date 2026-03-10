@@ -141,55 +141,45 @@ const Index = () => {
         <div
           className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
           style={{
-            transform: `translateY(${Math.min(pullDistance - 24, 32)}px)`,
-            transition: isSettling ? 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease'
+            transform: `translateY(${Math.min(pullDistance - 20, 36)}px)`,
+            transition: isSettling ? 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease'
               : isRefreshing ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               : 'none',
-            opacity: isSettling ? 0 : Math.min(pullDistance / 30, 1),
+            opacity: isSettling ? 0 : Math.min(pullDistance / 20, 1),
           }}
         >
           <div
-            className="w-11 h-11 rounded-full bg-background flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-background flex items-center justify-center"
             style={{
               boxShadow: isRefreshing
-                ? '0 4px 20px -4px hsl(var(--primary) / 0.3), 0 2px 8px -2px rgba(0,0,0,0.12)'
-                : `0 ${2 + progress * 4}px ${8 + progress * 12}px -${2 + progress * 2}px rgba(0,0,0,0.15)`,
-              transform: `scale(${isSettling ? 0.3 : isRefreshing ? 1 : 0.6 + progress * 0.4})`,
-              transition: isSettling ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s'
-                : isRefreshing ? 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s'
+                ? '0 3px 16px -3px hsl(var(--primary) / 0.25), 0 1px 6px -1px rgba(0,0,0,0.1)'
+                : `0 ${1 + progress * 3}px ${6 + progress * 10}px -${1 + progress * 2}px rgba(0,0,0,0.18)`,
+              transform: `scale(${isSettling ? 0.2 : isRefreshing ? 1 : 0.5 + progress * 0.5})`,
+              transition: isSettling ? 'transform 0.25s ease-in, box-shadow 0.25s'
+                : isRefreshing ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s'
                 : 'box-shadow 0.1s',
-              border: `1.5px solid ${progress >= 1 || isRefreshing ? 'hsl(var(--primary) / 0.2)' : 'hsl(var(--border))'}`,
+              border: `1.5px solid ${progress >= 1 || isRefreshing ? 'hsl(var(--primary) / 0.25)' : 'hsl(var(--border))'}`,
             }}
           >
             {isRefreshing ? (
-              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none"
-                style={{ animation: 'ptr-spin 0.7s cubic-bezier(0.4, 0, 0.2, 1) infinite' }}>
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5"
-                  strokeDasharray="20 44" strokeLinecap="round" />
-              </svg>
+              /* Spinning state: Material-style indeterminate spinner */
+              <RefreshCw
+                className="w-[18px] h-[18px] text-primary"
+                style={{ animation: 'ptr-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite' }}
+                strokeWidth={2.5}
+              />
             ) : (
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              /* Pulling state: RefreshCw icon that rotates with progress */
+              <RefreshCw
+                className="w-[18px] h-[18px]"
+                strokeWidth={2.5}
                 style={{
                   color: progress >= 1 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
-                  transform: `rotate(${progress * 300}deg)`,
+                  transform: `rotate(${progress * 270}deg)`,
+                  opacity: 0.3 + progress * 0.7,
                   transition: 'color 0.15s ease',
                 }}
-              >
-                <path
-                  d="M21 12a9 9 0 11-6.219-8.56"
-                  strokeDasharray={`${Math.max(progress * 52, 2)} 60`}
-                />
-                {progress >= 1 && (
-                  <polyline points="16 3 21 3 21 8" style={{ opacity: 1 }} />
-                )}
-              </svg>
+              />
             )}
           </div>
         </div>
