@@ -759,7 +759,7 @@ const Monitoraggio = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border/30">
+                    <tr className="border-b border-foreground/[0.06]">
                       <th className="text-left py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Edizione</th>
                       <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Biglietti</th>
                       <th className="text-right py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase">Presenze</th>
