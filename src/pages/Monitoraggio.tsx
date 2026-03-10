@@ -801,7 +801,7 @@ const Monitoraggio = () => {
         )}
 
         {!loading && editionResults.length === 0 && hasData && (
-          <div className="soft-card p-10 text-center">
+          <div className="glass p-10 text-center">
             <ArrowRightLeft className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground text-sm">
               Seleziona un periodo e premi "Confronta".
