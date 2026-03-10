@@ -6,114 +6,114 @@
 
 @layer base {
   :root {
-    --background: 40 30% 96%;
-    --foreground: 25 30% 12%;
+    --background: 150 8% 95%;
+    --foreground: 150 20% 10%;
 
-    --card: 40 25% 98%;
-    --card-foreground: 25 30% 12%;
+    --card: 150 6% 97%;
+    --card-foreground: 150 20% 10%;
 
-    --popover: 40 25% 98%;
-    --popover-foreground: 25 30% 12%;
+    --popover: 150 6% 97%;
+    --popover-foreground: 150 20% 10%;
 
-    --primary: 36 75% 55%;
+    --primary: 145 55% 32%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 65% 42%;
+    --secondary: 155 40% 25%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 38 20% 91%;
-    --muted-foreground: 25 15% 45%;
+    --muted: 150 8% 90%;
+    --muted-foreground: 150 10% 40%;
 
-    --accent: 5 55% 55%;
+    --accent: 145 45% 28%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 5 55% 55%;
+    --destructive: 0 60% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 38 18% 87%;
-    --input: 38 18% 87%;
-    --ring: 36 75% 55%;
+    --border: 150 8% 85%;
+    --input: 150 8% 85%;
+    --ring: 145 55% 32%;
 
     --radius: 1rem;
 
-    --card-orange: 36 70% 90%;
-    --card-blue: 40 55% 92%;
-    --card-mint: 38 30% 91%;
-    --card-pink: 5 50% 92%;
-    --card-yellow: 48 80% 88%;
-    --card-purple: 30 40% 90%;
+    --card-orange: 145 20% 90%;
+    --card-blue: 160 25% 90%;
+    --card-mint: 140 18% 89%;
+    --card-pink: 170 20% 90%;
+    --card-yellow: 130 22% 89%;
+    --card-purple: 155 15% 90%;
 
-    --chart-day1: 48 80% 60%;
-    --chart-day2: 36 75% 55%;
-    --chart-day3: 5 55% 55%;
-    --chart-day4: 30 65% 42%;
-    --chart-day5: 20 70% 50%;
-    --chart-total: 25 20% 30%;
+    --chart-day1: 145 55% 40%;
+    --chart-day2: 160 50% 35%;
+    --chart-day3: 130 45% 38%;
+    --chart-day4: 170 40% 30%;
+    --chart-day5: 140 50% 42%;
+    --chart-total: 150 15% 25%;
 
-    --sidebar-background: 40 25% 97%;
-    --sidebar-foreground: 25 25% 20%;
-    --sidebar-primary: 36 75% 55%;
+    --sidebar-background: 150 8% 96%;
+    --sidebar-foreground: 150 15% 15%;
+    --sidebar-primary: 145 55% 32%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 40% 93%;
-    --sidebar-accent-foreground: 25 30% 12%;
-    --sidebar-border: 38 18% 87%;
-    --sidebar-ring: 36 75% 55%;
+    --sidebar-accent: 150 12% 92%;
+    --sidebar-accent-foreground: 150 20% 10%;
+    --sidebar-border: 150 8% 85%;
+    --sidebar-ring: 145 55% 32%;
 
     --font-display: 'Space Grotesk', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
 
   .dark {
-    --background: 25 15% 7%;
-    --foreground: 40 20% 92%;
+    --background: 150 12% 5%;
+    --foreground: 145 10% 90%;
 
-    --card: 25 12% 12%;
-    --card-foreground: 40 20% 92%;
+    --card: 150 10% 9%;
+    --card-foreground: 145 10% 90%;
 
-    --popover: 25 12% 12%;
-    --popover-foreground: 40 20% 92%;
+    --popover: 150 10% 9%;
+    --popover-foreground: 145 10% 90%;
 
-    --primary: 36 75% 58%;
-    --primary-foreground: 25 30% 8%;
+    --primary: 145 55% 38%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 55% 48%;
+    --secondary: 155 40% 30%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 25 10% 17%;
-    --muted-foreground: 38 12% 60%;
+    --muted: 150 8% 15%;
+    --muted-foreground: 145 8% 55%;
 
-    --accent: 5 50% 52%;
+    --accent: 145 45% 32%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 5 50% 48%;
+    --destructive: 0 55% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 25 10% 20%;
-    --input: 25 10% 20%;
-    --ring: 36 75% 58%;
+    --border: 150 8% 18%;
+    --input: 150 8% 18%;
+    --ring: 145 55% 38%;
 
-    --card-orange: 30 35% 15%;
-    --card-blue: 36 30% 14%;
-    --card-mint: 30 20% 13%;
-    --card-pink: 5 25% 15%;
-    --card-yellow: 42 35% 14%;
-    --card-purple: 25 20% 14%;
+    --card-orange: 145 20% 12%;
+    --card-blue: 160 18% 11%;
+    --card-mint: 140 15% 10%;
+    --card-pink: 170 15% 12%;
+    --card-yellow: 130 18% 11%;
+    --card-purple: 155 12% 11%;
 
-    --chart-day1: 48 80% 58%;
-    --chart-day2: 36 75% 55%;
-    --chart-day3: 5 55% 55%;
-    --chart-day4: 30 55% 50%;
-    --chart-day5: 20 70% 52%;
-    --chart-total: 38 15% 65%;
+    --chart-day1: 145 55% 45%;
+    --chart-day2: 160 50% 40%;
+    --chart-day3: 130 45% 42%;
+    --chart-day4: 170 40% 35%;
+    --chart-day5: 140 50% 48%;
+    --chart-total: 145 10% 60%;
 
-    --sidebar-background: 25 15% 8%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-primary: 36 75% 55%;
-    --sidebar-primary-foreground: 25 20% 8%;
-    --sidebar-accent: 25 12% 14%;
-    --sidebar-accent-foreground: 40 20% 92%;
-    --sidebar-border: 25 10% 16%;
-    --sidebar-ring: 36 75% 55%;
+    --sidebar-background: 150 12% 6%;
+    --sidebar-foreground: 145 10% 90%;
+    --sidebar-primary: 145 55% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 150 10% 12%;
+    --sidebar-accent-foreground: 145 10% 90%;
+    --sidebar-border: 150 8% 15%;
+    --sidebar-ring: 145 55% 38%;
   }
 }
 
