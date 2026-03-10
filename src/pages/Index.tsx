@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon } from 'lucide-react';
+import { Ticket, BarChart3, RefreshCw, Users, CalendarDays, Bell, BellOff, Sun, Moon, ArrowDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { useDiceEvents } from '@/hooks/useDiceEvents';
 import { useTicketNotifications } from '@/hooks/useTicketNotifications';
+import { useHaptics } from '@/hooks/useHaptics';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import logoBlack from '@/assets/logo_black.png';
 import {
   groupEventsByEdition,
