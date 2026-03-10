@@ -752,8 +752,8 @@ const Monitoraggio = () => {
             )}
 
             {/* Summary Table */}
-            <div className="soft-card overflow-hidden">
-              <div className="p-4 border-b border-border/30">
+            <div className="glass overflow-hidden">
+              <div className="p-4 border-b border-foreground/[0.06]">
                 <h3 className="text-sm font-bold">Riepilogo</h3>
               </div>
               <div className="overflow-x-auto">
