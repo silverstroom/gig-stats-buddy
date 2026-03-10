@@ -556,8 +556,8 @@ const Monitoraggio = () => {
                   onClick={() => handlePresetClick(idx)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                     activePreset === idx
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                      ? 'glass-chip-active'
+                      : 'glass-chip hover:bg-foreground/[0.06]'
                   }`}
                 >
                   {preset.label}
