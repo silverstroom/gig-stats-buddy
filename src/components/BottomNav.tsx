@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { Home, TrendingUp, Target, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useHaptics } from '@/hooks/useHaptics';
 
 const NAV_ITEMS = [
 { to: '/', label: 'Home', icon: Home },
