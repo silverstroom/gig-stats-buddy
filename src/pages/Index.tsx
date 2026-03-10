@@ -30,6 +30,8 @@ import { WeeklySalesCard } from '@/components/WeeklySalesCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CARD_STYLES = ['soft-card-blue', 'soft-card-yellow', 'soft-card-orange', 'soft-card-mint', 'soft-card-pink'];
+const DAY_CARD_STYLES = ['soft-card-teal', 'soft-card-coral', 'soft-card-deepblue'];
+const DAY_COLOR_CLASSES = ['text-[hsl(168,55%,51%)]', 'text-[hsl(5,85%,65%)]', 'text-[hsl(225,100%,50%)]'];
 
 const Index = () => {
   const { events, loading, error, fetchEvents, snapshots } = useDiceEvents();
@@ -283,8 +285,8 @@ const Index = () => {
               value={day.count}
               subtitle={`Presenze ${day.day}`}
               icon={<CalendarDays className="w-5 h-5" />}
-              colorClass={i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-muted-foreground'}
-              cardStyle={CARD_STYLES[(i + 2) % CARD_STYLES.length]}
+              colorClass={DAY_COLOR_CLASSES[i % DAY_COLOR_CLASSES.length]}
+              cardStyle={DAY_CARD_STYLES[i % DAY_CARD_STYLES.length]}
               todaySales={
               isLatestEdition && snapshots.yesterdayBaseline ?
               todaySalesMap.get(day.date) || null :

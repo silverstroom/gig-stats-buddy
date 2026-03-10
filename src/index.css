@@ -42,6 +42,9 @@
     --card-pink: 235 50% 93%;
     --card-yellow: 42 75% 90%;
     --card-purple: 240 40% 93%;
+    --card-teal: 168 45% 90%;
+    --card-coral: 5 70% 93%;
+    --card-deepblue: 225 70% 93%;
 
     --chart-day1: 168 55% 51%;
     --chart-day2: 5 80% 65%;
@@ -98,6 +101,9 @@
     --card-pink: 235 25% 13%;
     --card-yellow: 42 35% 11%;
     --card-purple: 240 20% 12%;
+    --card-teal: 168 30% 12%;
+    --card-coral: 5 35% 13%;
+    --card-deepblue: 225 40% 14%;
 
     --chart-day1: 168 55% 55%;
     --chart-day2: 5 80% 68%;
@@ -180,6 +186,24 @@
     background: hsl(var(--card-purple));
     @apply rounded-3xl border border-border/20;
     box-shadow: 0 2px 8px -2px hsl(280 40% 50% / 0.08), 0 8px 24px -4px hsl(280 40% 50% / 0.1);
+  }
+
+  .soft-card-teal {
+    background: hsl(var(--card-teal));
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(168 55% 40% / 0.08), 0 8px 24px -4px hsl(168 55% 40% / 0.1);
+  }
+
+  .soft-card-coral {
+    background: hsl(var(--card-coral));
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(5 80% 50% / 0.08), 0 8px 24px -4px hsl(5 80% 50% / 0.1);
+  }
+
+  .soft-card-deepblue {
+    background: hsl(var(--card-deepblue));
+    @apply rounded-3xl border border-border/20;
+    box-shadow: 0 2px 8px -2px hsl(225 100% 44% / 0.08), 0 8px 24px -4px hsl(225 100% 44% / 0.1);
   }
 
   .glass-card {
