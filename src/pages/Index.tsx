@@ -310,6 +310,28 @@ const Index = () => {
               null
               } />
             )}
+              {/* COSMO - Concerto al Mattino box */}
+              {(() => {
+                const cosmoEvent = selectedEdition?.events.find(e => /cosmo/i.test(e.name) && /concerto\s*al\s*mattino/i.test(e.name));
+                if (!cosmoEvent) return null;
+                const cosmoTodaySold = (() => {
+                  if (!isLatestEdition || !snapshots.yesterdayBaseline) return null;
+                  const ref = snapshots.yesterdayBaseline.find(s => s.event_id === cosmoEvent.id);
+                  const refSold = ref?.tickets_sold ?? cosmoEvent.ticketsSold;
+                  return { soldToday: Math.max(0, cosmoEvent.ticketsSold - refSold), soldYesterday: 0 };
+                })();
+                return (
+                  <StatCard
+                    title="12 Ago ☀️"
+                    value={cosmoEvent.ticketsSold}
+                    subtitle="COSMO · Concerto al Mattino"
+                    icon={<Sun className="w-5 h-5" />}
+                    colorClass="text-[hsl(40,95%,55%)]"
+                    cardStyle="glass-orange"
+                    todaySales={cosmoTodaySold}
+                  />
+                );
+              })()}
             </div>
 
             {/* Weekly Sales */}
