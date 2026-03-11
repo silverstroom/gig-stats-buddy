@@ -322,7 +322,7 @@ const Index = () => {
                 })();
                 return (
                   <StatCard
-                    title="12 Ago ☀️"
+                    title="12 Ago - COSMO (SOLO) ☀️"
                     value={cosmoEvent.ticketsSold}
                     subtitle="COSMO · Concerto al Mattino"
                     icon={<Sun className="w-5 h-5" />}
