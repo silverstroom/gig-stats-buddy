@@ -188,6 +188,14 @@ export function calculateEditionAttendance(edition: FestivalEdition): DayDistrib
   for (const d of days) dayMap[d] = 0;
 
   for (const event of edition.events) {
+    if (isCosmoSoloEvent(event)) {
+      // COSMO solo counts as 1 presence on its event date (12 Aug)
+      const cosmoDate = new Date(event.startDatetime).toISOString().split('T')[0];
+      if (cosmoDate in dayMap) {
+        dayMap[cosmoDate] += event.ticketsSold;
+      }
+      continue;
+    }
     const eventDays = getEventDays(event, edition.key);
     for (const d of eventDays) {
       if (d in dayMap) {
@@ -251,10 +259,19 @@ export function getTodaySalesPerDay(
   }
 
   for (const event of edition.events) {
-    const eventDays = getEventDays(event, edition.key);
     const refSold = referenceMap.get(event.id) ?? event.ticketsSold;
     const diffToday = Math.max(0, event.ticketsSold - refSold);
 
+    if (isCosmoSoloEvent(event)) {
+      // COSMO solo counts toward its event date (12 Aug)
+      const cosmoDate = new Date(event.startDatetime).toISOString().split('T')[0];
+      if (cosmoDate in soldTodayPerDay) {
+        soldTodayPerDay[cosmoDate] += diffToday;
+      }
+      continue;
+    }
+
+    const eventDays = getEventDays(event, edition.key);
     for (const d of eventDays) {
       if (d in soldTodayPerDay) {
         soldTodayPerDay[d] += diffToday;
@@ -345,7 +362,9 @@ export function getTodayPresenzeBreakdown(
     const diffToday = Math.max(0, event.ticketsSold - refSold);
     if (diffToday > 0) {
       const days = getEventDays(event, edition.key);
-      const presenze = diffToday * days.length;
+      // COSMO solo counts as 1 presence even though excluded from day distribution
+      const dayCount = isCosmoSoloEvent(event) ? 1 : days.length;
+      const presenze = diffToday * dayCount;
       details.push({ eventName: event.name, soldToday: presenze });
     }
   }
