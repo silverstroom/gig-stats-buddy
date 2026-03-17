@@ -87,10 +87,14 @@ const Index = () => {
     [selectedEdition]
   );
 
-  const totalPresenze = useMemo(
-    () => distribution.reduce((s, d) => s + d.count, 0),
-    [distribution]
-  );
+  const totalPresenze = useMemo(() => {
+    const dayPresenze = distribution.reduce((s, d) => s + d.count, 0);
+    // Add COSMO solo tickets as presenze (1 each) — they're excluded from day distribution
+    const cosmoSold = selectedEdition?.events
+      .filter(isCosmoSoloEvent)
+      .reduce((s, e) => s + e.ticketsSold, 0) ?? 0;
+    return dayPresenze + cosmoSold;
+  }, [distribution, selectedEdition]);
 
   const isLatestEdition = editions.length > 0 && selectedEditionKey === editions[0].key;
 
