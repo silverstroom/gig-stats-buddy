@@ -101,7 +101,7 @@ export function getEditionDays(edition: FestivalEdition): string[] {
   return Array.from(daysSet).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 }
 
-function isCosmoSoloEvent(event: DiceEventRaw): boolean {
+export function isCosmoSoloEvent(event: DiceEventRaw): boolean {
   return /cosmo/i.test(event.name) && /concerto\s*al\s*mattino/i.test(event.name);
 }
 
