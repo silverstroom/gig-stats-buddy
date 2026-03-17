@@ -6,6 +6,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
+  note?: string;
   icon?: ReactNode;
   colorClass?: string;
   cardStyle?: string;
