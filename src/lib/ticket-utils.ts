@@ -259,10 +259,19 @@ export function getTodaySalesPerDay(
   }
 
   for (const event of edition.events) {
-    const eventDays = getEventDays(event, edition.key);
     const refSold = referenceMap.get(event.id) ?? event.ticketsSold;
     const diffToday = Math.max(0, event.ticketsSold - refSold);
 
+    if (isCosmoSoloEvent(event)) {
+      // COSMO solo counts toward its event date (12 Aug)
+      const cosmoDate = new Date(event.startDatetime).toISOString().split('T')[0];
+      if (cosmoDate in soldTodayPerDay) {
+        soldTodayPerDay[cosmoDate] += diffToday;
+      }
+      continue;
+    }
+
+    const eventDays = getEventDays(event, edition.key);
     for (const d of eventDays) {
       if (d in soldTodayPerDay) {
         soldTodayPerDay[d] += diffToday;
