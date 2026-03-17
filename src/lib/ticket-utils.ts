@@ -188,14 +188,8 @@ export function calculateEditionAttendance(edition: FestivalEdition): DayDistrib
   for (const d of days) dayMap[d] = 0;
 
   for (const event of edition.events) {
-    if (isCosmoSoloEvent(event)) {
-      // COSMO solo counts as 1 presence on its event date (12 Aug)
-      const cosmoDate = new Date(event.startDatetime).toISOString().split('T')[0];
-      if (cosmoDate in dayMap) {
-        dayMap[cosmoDate] += event.ticketsSold;
-      }
-      continue;
-    }
+    // COSMO solo is excluded from per-day distribution (tracked separately)
+    if (isCosmoSoloEvent(event)) continue;
     const eventDays = getEventDays(event, edition.key);
     for (const d of eventDays) {
       if (d in dayMap) {
