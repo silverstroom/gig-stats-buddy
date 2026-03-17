@@ -19,6 +19,7 @@ import {
   getTodaySalesPerDay,
   getTodaySalesBreakdown,
   getTodayPresenzeBreakdown,
+  isCosmoSoloEvent,
   type FestivalEdition } from
 '@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
