@@ -101,7 +101,16 @@ export function getEditionDays(edition: FestivalEdition): string[] {
   return Array.from(daysSet).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 }
 
+function isCosmoSoloEvent(event: DiceEventRaw): boolean {
+  return /cosmo/i.test(event.name) && /concerto\s*al\s*mattino/i.test(event.name);
+}
+
 function getEventDays(event: DiceEventRaw, editionKey?: string): string[] {
+  // COSMO solo event is tracked separately — exclude from day distribution
+  if (isCosmoSoloEvent(event)) {
+    return [];
+  }
+
   const officialDays = editionKey && EDITION_DAYS[editionKey] ? EDITION_DAYS[editionKey] : null;
 
   if (!officialDays) {

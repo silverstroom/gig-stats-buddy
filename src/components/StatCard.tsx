@@ -6,6 +6,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
+  note?: string;
   icon?: ReactNode;
   colorClass?: string;
   cardStyle?: string;
@@ -47,7 +48,7 @@ function useAnimatedNumber(target: number, duration = 900) {
   return { display, flash };
 }
 
-export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', cardStyle, todaySales, todayBreakdown, todayLabel, glowClass }: StatCardProps) {
+export function StatCard({ title, value, subtitle, note, icon, colorClass = 'text-primary', cardStyle, todaySales, todayBreakdown, todayLabel, glowClass }: StatCardProps) {
   const pctChange = todaySales && todaySales.soldYesterday > 0
     ? Math.round(((todaySales.soldToday - todaySales.soldYesterday) / todaySales.soldYesterday) * 100)
     : null;
@@ -76,6 +77,9 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
           </p>
           {subtitle && (
             <p className="text-[11px] text-muted-foreground mt-1">{subtitle}</p>
+          )}
+          {note && (
+            <p className="text-[10px] text-muted-foreground/70 mt-0.5 italic leading-tight">{note}</p>
           )}
         </div>
         {icon && (
