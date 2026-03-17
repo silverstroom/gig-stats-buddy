@@ -303,7 +303,7 @@ const Index = () => {
                     title={day.day}
                     value={day.count}
                     subtitle={`Presenze ${day.day}`}
-                    note={is12Ago ? "Esclusi biglietti COSMO solo" : undefined}
+                    note={is12Ago ? "Include presenze COSMO solo" : undefined}
                     icon={<CalendarDays className="w-5 h-5" />}
                     colorClass={DAY_COLOR_CLASSES[i % DAY_COLOR_CLASSES.length]}
                     cardStyle={DAY_CARD_STYLES[i % DAY_CARD_STYLES.length]}
