@@ -295,21 +295,26 @@ const Index = () => {
 
             {/* Per-day breakdown */}
             <div className="grid grid-cols-2 gap-3">
-              {distribution.map((day, i) =>
-            <StatCard
-              key={day.date}
-              title={day.day}
-              value={day.count}
-              subtitle={`Presenze ${day.day}`}
-              icon={<CalendarDays className="w-5 h-5" />}
-              colorClass={DAY_COLOR_CLASSES[i % DAY_COLOR_CLASSES.length]}
-              cardStyle={DAY_CARD_STYLES[i % DAY_CARD_STYLES.length]}
-              todaySales={
-              isLatestEdition && snapshots.yesterdayBaseline ?
-              todaySalesMap.get(day.date) || null :
-              null
-              } />
-            )}
+              {distribution.map((day, i) => {
+                const is12Ago = day.date.endsWith('-08-12');
+                return (
+                  <StatCard
+                    key={day.date}
+                    title={day.day}
+                    value={day.count}
+                    subtitle={`Presenze ${day.day}`}
+                    note={is12Ago ? "Esclusi biglietti COSMO solo" : undefined}
+                    icon={<CalendarDays className="w-5 h-5" />}
+                    colorClass={DAY_COLOR_CLASSES[i % DAY_COLOR_CLASSES.length]}
+                    cardStyle={DAY_CARD_STYLES[i % DAY_CARD_STYLES.length]}
+                    todaySales={
+                      isLatestEdition && snapshots.yesterdayBaseline ?
+                      todaySalesMap.get(day.date) || null :
+                      null
+                    }
+                  />
+                );
+              })}
               {/* COSMO - Concerto al Mattino box */}
               {(() => {
                 const cosmoEvent = selectedEdition?.events.find(e => /cosmo/i.test(e.name) && /concerto\s*al\s*mattino/i.test(e.name));
@@ -325,6 +330,7 @@ const Index = () => {
                     title="12 Ago - COSMO (SOLO) ☀️"
                     value={cosmoEvent.ticketsSold}
                     subtitle="COSMO · Concerto al Mattino"
+                    note="Solo biglietti COSMO singoli. Chi ha il 12 Ago intero entra anche qui."
                     icon={<Sun className="w-5 h-5" />}
                     colorClass="text-[hsl(40,95%,55%)]"
                     cardStyle="glass-orange"

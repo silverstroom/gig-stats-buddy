@@ -78,6 +78,9 @@ export function StatCard({ title, value, subtitle, icon, colorClass = 'text-prim
           {subtitle && (
             <p className="text-[11px] text-muted-foreground mt-1">{subtitle}</p>
           )}
+          {note && (
+            <p className="text-[10px] text-muted-foreground/70 mt-0.5 italic leading-tight">{note}</p>
+          )}
         </div>
         {icon && (
           <div className={`p-2.5 rounded-2xl bg-foreground/[0.04] backdrop-blur-sm ${colorClass} transition-transform duration-500 ${flash ? 'scale-125 rotate-12' : 'scale-100 rotate-0'}`}>
