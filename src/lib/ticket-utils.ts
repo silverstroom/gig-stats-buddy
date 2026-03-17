@@ -106,10 +106,6 @@ function isCosmoSoloEvent(event: DiceEventRaw): boolean {
 }
 
 function getEventDays(event: DiceEventRaw, editionKey?: string): string[] {
-  // COSMO solo event is tracked separately — exclude from day distribution
-  if (isCosmoSoloEvent(event)) {
-    return [];
-  }
 
   const officialDays = editionKey && EDITION_DAYS[editionKey] ? EDITION_DAYS[editionKey] : null;
 
