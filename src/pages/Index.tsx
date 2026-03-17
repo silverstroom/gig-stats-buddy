@@ -19,6 +19,7 @@ import {
   getTodaySalesPerDay,
   getTodaySalesBreakdown,
   getTodayPresenzeBreakdown,
+  isCosmoSoloEvent,
   type FestivalEdition } from
 '@/lib/ticket-utils';
 import { StatCard } from '@/components/StatCard';
@@ -86,10 +87,14 @@ const Index = () => {
     [selectedEdition]
   );
 
-  const totalPresenze = useMemo(
-    () => distribution.reduce((s, d) => s + d.count, 0),
-    [distribution]
-  );
+  const totalPresenze = useMemo(() => {
+    const dayPresenze = distribution.reduce((s, d) => s + d.count, 0);
+    // Add COSMO solo tickets as presenze (1 each) — they're excluded from day distribution
+    const cosmoSold = selectedEdition?.events
+      .filter(isCosmoSoloEvent)
+      .reduce((s, e) => s + e.ticketsSold, 0) ?? 0;
+    return dayPresenze + cosmoSold;
+  }, [distribution, selectedEdition]);
 
   const isLatestEdition = editions.length > 0 && selectedEditionKey === editions[0].key;
 
@@ -303,7 +308,7 @@ const Index = () => {
                     title={day.day}
                     value={day.count}
                     subtitle={`Presenze ${day.day}`}
-                    note={is12Ago ? "Include presenze COSMO solo" : undefined}
+                    note={is12Ago ? "Esclusi biglietti COSMO solo" : undefined}
                     icon={<CalendarDays className="w-5 h-5" />}
                     colorClass={DAY_COLOR_CLASSES[i % DAY_COLOR_CLASSES.length]}
                     cardStyle={DAY_CARD_STYLES[i % DAY_CARD_STYLES.length]}

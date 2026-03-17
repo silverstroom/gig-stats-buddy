@@ -101,7 +101,7 @@ export function getEditionDays(edition: FestivalEdition): string[] {
   return Array.from(daysSet).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 }
 
-function isCosmoSoloEvent(event: DiceEventRaw): boolean {
+export function isCosmoSoloEvent(event: DiceEventRaw): boolean {
   return /cosmo/i.test(event.name) && /concerto\s*al\s*mattino/i.test(event.name);
 }
 
@@ -188,14 +188,8 @@ export function calculateEditionAttendance(edition: FestivalEdition): DayDistrib
   for (const d of days) dayMap[d] = 0;
 
   for (const event of edition.events) {
-    if (isCosmoSoloEvent(event)) {
-      // COSMO solo counts as 1 presence on its event date (12 Aug)
-      const cosmoDate = new Date(event.startDatetime).toISOString().split('T')[0];
-      if (cosmoDate in dayMap) {
-        dayMap[cosmoDate] += event.ticketsSold;
-      }
-      continue;
-    }
+    // COSMO solo is excluded from per-day distribution (tracked separately)
+    if (isCosmoSoloEvent(event)) continue;
     const eventDays = getEventDays(event, edition.key);
     for (const d of eventDays) {
       if (d in dayMap) {
@@ -259,17 +253,11 @@ export function getTodaySalesPerDay(
   }
 
   for (const event of edition.events) {
+    // COSMO solo is excluded from per-day sales (tracked separately)
+    if (isCosmoSoloEvent(event)) continue;
+
     const refSold = referenceMap.get(event.id) ?? event.ticketsSold;
     const diffToday = Math.max(0, event.ticketsSold - refSold);
-
-    if (isCosmoSoloEvent(event)) {
-      // COSMO solo counts toward its event date (12 Aug)
-      const cosmoDate = new Date(event.startDatetime).toISOString().split('T')[0];
-      if (cosmoDate in soldTodayPerDay) {
-        soldTodayPerDay[cosmoDate] += diffToday;
-      }
-      continue;
-    }
 
     const eventDays = getEventDays(event, edition.key);
     for (const d of eventDays) {
