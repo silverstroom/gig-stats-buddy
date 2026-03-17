@@ -48,7 +48,7 @@ function useAnimatedNumber(target: number, duration = 900) {
   return { display, flash };
 }
 
-export function StatCard({ title, value, subtitle, icon, colorClass = 'text-primary', cardStyle, todaySales, todayBreakdown, todayLabel, glowClass }: StatCardProps) {
+export function StatCard({ title, value, subtitle, note, icon, colorClass = 'text-primary', cardStyle, todaySales, todayBreakdown, todayLabel, glowClass }: StatCardProps) {
   const pctChange = todaySales && todaySales.soldYesterday > 0
     ? Math.round(((todaySales.soldToday - todaySales.soldYesterday) / todaySales.soldYesterday) * 100)
     : null;
