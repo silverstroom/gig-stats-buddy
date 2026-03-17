@@ -345,7 +345,9 @@ export function getTodayPresenzeBreakdown(
     const diffToday = Math.max(0, event.ticketsSold - refSold);
     if (diffToday > 0) {
       const days = getEventDays(event, edition.key);
-      const presenze = diffToday * days.length;
+      // COSMO solo counts as 1 presence even though excluded from day distribution
+      const dayCount = isCosmoSoloEvent(event) ? 1 : days.length;
+      const presenze = diffToday * dayCount;
       details.push({ eventName: event.name, soldToday: presenze });
     }
   }
