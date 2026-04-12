@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { DiceEventRaw } from '@/lib/ticket-utils';
 
@@ -13,6 +13,24 @@ export interface SnapshotData {
   yesterdayBaseline: SnapshotEntry[] | null;
 }
 
+function parseEventsFromResponse(data: any): DiceEventRaw[] {
+  const eventsData = data?.data?.viewer?.events?.edges || [];
+  return eventsData
+    .filter((edge: any) => edge.node.state !== 'CANCELLED')
+    .map((edge: any) => {
+      const node = edge.node;
+      return {
+        id: node.id,
+        name: node.name,
+        state: node.state,
+        startDatetime: node.startDatetime,
+        endDatetime: node.endDatetime,
+        ticketTypes: node.ticketTypes || [],
+        ticketsSold: node.tickets?.totalCount || 0,
+      };
+    });
+}
+
 export function useDiceEvents() {
   const [events, setEvents] = useState<DiceEventRaw[]>([]);
   const [loading, setLoading] = useState(false);
@@ -21,13 +39,49 @@ export function useDiceEvents() {
     todayBaseline: null,
     yesterdayBaseline: null,
   });
+  const [isCachedData, setIsCachedData] = useState(false);
   const inFlightRef = useRef(false);
+  const cacheLoadedRef = useRef(false);
+
+  // Load cached data instantly on mount
+  useEffect(() => {
+    if (cacheLoadedRef.current) return;
+    cacheLoadedRef.current = true;
+
+    (async () => {
+      try {
+        const { data: cacheRow } = await supabase
+          .from('dice_cache')
+          .select('data, updated_at')
+          .eq('cache_key', 'events')
+          .maybeSingle();
+
+        if (cacheRow?.data) {
+          const cached = cacheRow.data as any;
+          const parsed = parseEventsFromResponse(cached);
+          if (parsed.length > 0) {
+            setEvents(parsed);
+            setSnapshots({
+              todayBaseline: cached.todayBaseline || null,
+              yesterdayBaseline: cached.yesterdayBaseline || null,
+            });
+            setIsCachedData(true);
+          }
+        }
+      } catch (err) {
+        console.warn('Cache load failed (non-blocking):', err);
+      }
+    })();
+  }, []);
 
   const fetchEvents = useCallback(async () => {
     if (inFlightRef.current) return;
 
     inFlightRef.current = true;
-    setLoading(true);
+    // Only show full loading if we have no cached data
+    if (!isCachedData && events.length === 0) {
+      setLoading(true);
+    }
     setError(null);
 
     const MAX_RETRIES = 3;
@@ -48,36 +102,22 @@ export function useDiceEvents() {
         if (fnError) throw new Error(fnError.message);
         if (!data?.success) throw new Error(data?.error || 'Failed to fetch events');
 
-        const eventsData = data.data?.data?.viewer?.events?.edges || [];
-        const parsed: DiceEventRaw[] = eventsData
-          .filter((edge: any) => edge.node.state !== 'CANCELLED')
-          .map((edge: any) => {
-            const node = edge.node;
-            return {
-              id: node.id,
-              name: node.name,
-              state: node.state,
-              startDatetime: node.startDatetime,
-              endDatetime: node.endDatetime,
-              ticketTypes: node.ticketTypes || [],
-              ticketsSold: node.tickets?.totalCount || 0,
-            };
-          });
+        const parsed = parseEventsFromResponse(data);
 
         setEvents(parsed);
         setSnapshots({
           todayBaseline: data.todayBaseline || null,
           yesterdayBaseline: data.yesterdayBaseline || null,
         });
+        setIsCachedData(false);
         setError(null);
-        break; // Success, exit retry loop
+        break;
       } catch (err) {
         console.warn(`Fetch attempt ${attempt}/${MAX_RETRIES} failed:`, err);
         if (attempt === MAX_RETRIES) {
           console.error('All fetch attempts failed:', err);
           setError(err instanceof Error ? err.message : 'Unknown error');
         } else {
-          // Exponential backoff: 1s, 2s
           await new Promise(r => setTimeout(r, attempt * 1000));
         }
       }
@@ -85,7 +125,7 @@ export function useDiceEvents() {
 
     inFlightRef.current = false;
     setLoading(false);
-  }, []);
+  }, [events.length, isCachedData]);
 
-  return { events, loading, error, fetchEvents, snapshots };
+  return { events, loading, error, fetchEvents, snapshots, isCachedData };
 }
