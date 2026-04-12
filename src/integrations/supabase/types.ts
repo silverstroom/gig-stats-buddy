@@ -14,24 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      dice_cache: {
-        Row: {
-          cache_key: string
-          data: Json
-          updated_at: string
-        }
-        Insert: {
-          cache_key: string
-          data?: Json
-          updated_at?: string
-        }
-        Update: {
-          cache_key?: string
-          data?: Json
-          updated_at?: string
-        }
-        Relationships: []
-      }
       historical_daily_presenze: {
         Row: {
           created_at: string | null

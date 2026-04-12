@@ -197,29 +197,14 @@ Deno.serve(async (req) => {
           yesterdayBaseline = ydData;
         }
 
-        const responsePayload = {
-          success: true,
-          data,
-          todayBaseline,
-          yesterdayBaseline,
-          yesterdayDate,
-        };
-
-        // Save full response to cache for instant loading on next app open
-        try {
-          await sb
-            .from('dice_cache')
-            .upsert({
-              cache_key: 'events',
-              data: responsePayload,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'cache_key' });
-        } catch (cacheErr) {
-          console.error('Cache save error (non-blocking):', cacheErr);
-        }
-
         return new Response(
-          JSON.stringify(responsePayload),
+          JSON.stringify({
+            success: true,
+            data,
+            todayBaseline,
+            yesterdayBaseline,
+            yesterdayDate,
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (snapErr) {
