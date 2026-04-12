@@ -42,6 +42,7 @@ export function useDiceEvents() {
   const [isCachedData, setIsCachedData] = useState(false);
   const inFlightRef = useRef(false);
   const cacheLoadedRef = useRef(false);
+  const hasDataRef = useRef(false);
 
   // Load cached data instantly on mount
   useEffect(() => {
@@ -66,6 +67,7 @@ export function useDiceEvents() {
               yesterdayBaseline: cached.yesterdayBaseline || null,
             });
             setIsCachedData(true);
+            hasDataRef.current = true;
           }
         }
       } catch (err) {
@@ -78,8 +80,7 @@ export function useDiceEvents() {
     if (inFlightRef.current) return;
 
     inFlightRef.current = true;
-    // Only show full loading if we have no cached data
-    if (!isCachedData && events.length === 0) {
+    if (!hasDataRef.current) {
       setLoading(true);
     }
     setError(null);
@@ -110,6 +111,7 @@ export function useDiceEvents() {
           yesterdayBaseline: data.yesterdayBaseline || null,
         });
         setIsCachedData(false);
+        hasDataRef.current = true;
         setError(null);
         break;
       } catch (err) {
@@ -125,7 +127,7 @@ export function useDiceEvents() {
 
     inFlightRef.current = false;
     setLoading(false);
-  }, [events.length, isCachedData]);
+  }, []);
 
   return { events, loading, error, fetchEvents, snapshots, isCachedData };
 }
